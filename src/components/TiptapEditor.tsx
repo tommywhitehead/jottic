@@ -7,7 +7,7 @@ import { Paragraph } from '@tiptap/extension-paragraph';
 import { Text } from '@tiptap/extension-text';
 import { HardBreak } from '@tiptap/extension-hard-break';
 import { useStorage, useMutation, useMyPresence, useUpdateMyPresence, useOthers } from '../lib/liveblocks';
-import { NoteLinkExtension, noteLinkStyles } from './NoteLinkExtension';
+import { NoteLinkExtension } from './NoteLinkExtension';
 import { useNoteNavigation } from '../lib/noteNavigation';
 
 // Helper function to convert hex color to hue rotation

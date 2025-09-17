@@ -505,12 +505,12 @@
 
 /* Note Link Styles */
 .note-link {
-  color: #0066cc !important;
   text-decoration: underline !important;
+  font-weight: bold !important;
   cursor: pointer !important;
 }
 
 .note-link:hover {
-  color: #004499 !important;
-  text-decoration: underline !important;
+  background-color: #eeeeee;
+  border-radius: 4px;
 }

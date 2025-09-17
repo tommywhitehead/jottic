@@ -47,7 +47,6 @@ export const NoteLinkExtension = Extension.create({
                   const decoration = Decoration.inline(from, to, {
                     class: 'note-link',
                     'data-note-name': noteName,
-                    style: 'color: #0066cc; text-decoration: underline; cursor: pointer;',
                   });
 
                   decorations.push(decoration);
@@ -86,16 +85,3 @@ export const NoteLinkExtension = Extension.create({
   },
 });
 
-// CSS for note links
-export const noteLinkStyles = `
-  .note-link {
-    color: #0066cc !important;
-    text-decoration: underline !important;
-    cursor: pointer !important;
-  }
-  
-  .note-link:hover {
-    color: #004499 !important;
-    text-decoration: underline !important;
-  }
-`;
