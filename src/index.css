@@ -1,0 +1,17 @@
+/* Martian Mono font family */
+@import url('https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Apply Martian Mono to the entire app */
+body {
+  font-family: 'Martian Mono', monospace;
+  margin: 0;
+}
+
+/* Ensure all text elements use Martian Mono */
+* {
+  font-family: 'Martian Mono', monospace;
+}
