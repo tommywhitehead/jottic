@@ -178,6 +178,9 @@ function AppContent() {
                 {others.length + 1} ppl
               </span>
             )}
+            <span className="close-text" onClick={handleCloseNote}>
+              close
+            </span>
           </div>
         </div>
         

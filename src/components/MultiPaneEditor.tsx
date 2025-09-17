@@ -14,12 +14,14 @@ function PaneWithUserCount({
   noteTitle, 
   onTypingChange,
   isTyping,
-  isPageLoaded
+  isPageLoaded,
+  onClose
 }: {
   noteTitle: string;
   onTypingChange?: (isTyping: boolean) => void;
   isTyping: boolean;
   isPageLoaded: boolean;
+  onClose: () => void;
 }) {
   const others = useOthers();
   const { note, saveNote } = useNotes(noteTitle);
@@ -34,6 +36,9 @@ function PaneWithUserCount({
               {others.length + 1} ppl
             </span>
           )}
+          <span className="close-text" onClick={onClose}>
+            close
+          </span>
         </div>
       </div>
       
@@ -144,6 +149,27 @@ export function MultiPaneEditor({ noteTitles }: MultiPaneEditorProps) {
     if (paneToClose >= 0 && paneToClose < noteTitles.length) {
       // Close the selected note, navigate to the remaining notes
       const remainingNotes = noteTitles.filter((_, index) => index !== paneToClose);
+      if (remainingNotes.length === 0) {
+        navigate('/');
+      } else if (remainingNotes.length === 1) {
+        navigate(`/${remainingNotes[0]}`);
+      } else {
+        navigate(`/${remainingNotes.join('/')}`);
+      }
+    }
+  };
+
+  // Handle closing a specific note by index
+  const handleCloseNoteByIndex = (indexToClose: number) => {
+    // Safety check for noteTitles
+    if (!noteTitles || !Array.isArray(noteTitles) || noteTitles.length === 0) {
+      navigate('/');
+      return;
+    }
+    
+    if (indexToClose >= 0 && indexToClose < noteTitles.length) {
+      // Close the selected note, navigate to the remaining notes
+      const remainingNotes = noteTitles.filter((_, index) => index !== indexToClose);
       if (remainingNotes.length === 0) {
         navigate('/');
       } else if (remainingNotes.length === 1) {
@@ -293,6 +319,7 @@ export function MultiPaneEditor({ noteTitles }: MultiPaneEditorProps) {
                   onTypingChange={setIsTyping}
                   isTyping={isTyping}
                   isPageLoaded={isPageLoaded}
+                  onClose={() => handleCloseNoteByIndex(index)}
                 />
               </RoomProvider>
             </div>

@@ -17,7 +17,8 @@ function PaneWithUserCount({
   onSave, 
   onTypingChange,
   isTyping,
-  isPageLoaded
+  isPageLoaded,
+  onClose
 }: {
   noteTitle: string;
   note: any;
@@ -25,6 +26,7 @@ function PaneWithUserCount({
   onTypingChange?: (isTyping: boolean) => void;
   isTyping: boolean;
   isPageLoaded: boolean;
+  onClose: () => void;
 }) {
   const others = useOthers();
   
@@ -38,6 +40,9 @@ function PaneWithUserCount({
               {others.length + 1} ppl
             </span>
           )}
+          <span className="close-text" onClick={onClose}>
+            close
+          </span>
         </div>
       </div>
       
@@ -186,6 +191,7 @@ export function SplitScreenEditor({ leftNoteTitle, rightNoteTitle }: SplitScreen
                 onTypingChange={setIsTyping}
                 isTyping={isTyping}
                 isPageLoaded={isPageLoaded}
+                onClose={() => window.location.href = `/${rightNoteTitle}`}
               />
             </RoomProvider>
           </div>
@@ -214,6 +220,7 @@ export function SplitScreenEditor({ leftNoteTitle, rightNoteTitle }: SplitScreen
                 onTypingChange={setIsTyping}
                 isTyping={isTyping}
                 isPageLoaded={isPageLoaded}
+                onClose={() => window.location.href = `/${leftNoteTitle}`}
               />
             </RoomProvider>
           </div>
