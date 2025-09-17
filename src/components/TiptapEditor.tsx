@@ -7,6 +7,8 @@ import { Paragraph } from '@tiptap/extension-paragraph';
 import { Text } from '@tiptap/extension-text';
 import { HardBreak } from '@tiptap/extension-hard-break';
 import { useStorage, useMutation, useMyPresence, useUpdateMyPresence, useOthers } from '../lib/liveblocks';
+import { NoteLinkExtension, noteLinkStyles } from './NoteLinkExtension';
+import { useNoteNavigation } from '../lib/noteNavigation';
 
 // Helper function to convert hex color to hue rotation
 function getHueFromColor(hexColor: string): number {
@@ -60,6 +62,9 @@ export function TiptapEditor({
   // Cursor and presence management
   const [myPresence, updateMyPresence] = useMyPresence();
   const others = useOthers();
+  
+  // Note navigation functionality
+  const { goToNote } = useNoteNavigation();
 
   // Set initial user information in presence (only once)
   useEffect(() => {
@@ -112,6 +117,10 @@ export function TiptapEditor({
         // Keep only basic text editing
         history: false,
       }),
+      // Add note link extension with auto-navigation
+      NoteLinkExtension.configure({
+        onLinkCreated: goToNote,
+      }),
     ],
     content: content, // Use Liveblocks content
     onUpdate: ({ editor }) => {
@@ -162,6 +171,31 @@ export function TiptapEditor({
       editor.commands.focus();
     }
   }, [editor]);
+
+  // Handle clicks on note links
+  useEffect(() => {
+    const handleClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (target.classList.contains('note-link')) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        const noteName = target.getAttribute('data-note-name');
+        if (noteName) {
+          goToNote(noteName);
+        }
+      }
+    };
+
+    // Add click listener to the editor container
+    const editorElement = editor?.view.dom;
+    if (editorElement) {
+      editorElement.addEventListener('click', handleClick);
+      return () => {
+        editorElement.removeEventListener('click', handleClick);
+      };
+    }
+  }, [editor, goToNote]);
 
   // User colors are handled by the Liveblocks extension through UserMeta
   // The extension automatically uses colors from the resolveUsers function

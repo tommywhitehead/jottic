@@ -502,3 +502,15 @@
     transform: translate(-50%, -50%) scale(1);
   }
 }
+
+/* Note Link Styles */
+.note-link {
+  color: #0066cc !important;
+  text-decoration: underline !important;
+  cursor: pointer !important;
+}
+
+.note-link:hover {
+  color: #004499 !important;
+  text-decoration: underline !important;
+}
