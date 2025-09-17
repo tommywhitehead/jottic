@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import svgPaths from "./imports/svg-4qeuqv3u0r";
 import { useNotes } from './hooks/useNotes';
 import { FallbackEditor } from './components/FallbackEditor';
@@ -84,6 +84,7 @@ function AppContent() {
   const [isNavigating, setIsNavigating] = useState(false);
   const [isPageLoaded, setIsPageLoaded] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const others = useOthers();
   const editorContainerRef = useRef<HTMLDivElement>(null);
   
@@ -107,7 +108,7 @@ function AppContent() {
 
   // Handle closing note - navigate to home
   const handleCloseNote = () => {
-    window.location.href = '/';
+    navigate('/');
   };
 
 

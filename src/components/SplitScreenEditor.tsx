@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { RoomProvider, useOthers } from '../lib/liveblocks';
 import { TiptapEditor } from './TiptapEditor';
 import { useNotes } from '../hooks/useNotes';
@@ -92,6 +93,7 @@ function Header() {
 export function SplitScreenEditor({ leftNoteTitle, rightNoteTitle }: SplitScreenEditorProps) {
   const [isTyping, setIsTyping] = useState(false);
   const [isPageLoaded, setIsPageLoaded] = useState(false);
+  const navigate = useNavigate();
   
   // Refs for the panes
   const leftPaneRef = useRef<HTMLDivElement>(null);
@@ -111,10 +113,10 @@ export function SplitScreenEditor({ leftNoteTitle, rightNoteTitle }: SplitScreen
   const handleCloseNote = () => {
     if (isLeftActive) {
       // Close left note, navigate to right note
-      window.location.href = `/${rightNoteTitle}`;
+      navigate(`/${rightNoteTitle}`);
     } else if (isRightActive) {
       // Close right note, navigate to left note
-      window.location.href = `/${leftNoteTitle}`;
+      navigate(`/${leftNoteTitle}`);
     }
   };
 
@@ -191,7 +193,7 @@ export function SplitScreenEditor({ leftNoteTitle, rightNoteTitle }: SplitScreen
                 onTypingChange={setIsTyping}
                 isTyping={isTyping}
                 isPageLoaded={isPageLoaded}
-                onClose={() => window.location.href = `/${rightNoteTitle}`}
+                onClose={() => navigate(`/${rightNoteTitle}`)}
               />
             </RoomProvider>
           </div>
@@ -220,7 +222,7 @@ export function SplitScreenEditor({ leftNoteTitle, rightNoteTitle }: SplitScreen
                 onTypingChange={setIsTyping}
                 isTyping={isTyping}
                 isPageLoaded={isPageLoaded}
-                onClose={() => window.location.href = `/${leftNoteTitle}`}
+                onClose={() => navigate(`/${leftNoteTitle}`)}
               />
             </RoomProvider>
           </div>

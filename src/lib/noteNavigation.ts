@@ -1,8 +1,8 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 
 // Utility function to get current note titles from URL
-export function getCurrentNoteTitles(): string[] {
-  const path = window.location.pathname;
+export function getCurrentNoteTitles(location?: { pathname: string }): string[] {
+  const path = location?.pathname || window.location.pathname;
   if (path === '/' || path === '') {
     return [];
   }
@@ -10,18 +10,18 @@ export function getCurrentNoteTitles(): string[] {
 }
 
 // Utility function to check if a note already exists in the current URL
-export function noteExistsInUrl(noteName: string): boolean {
-  const currentNotes = getCurrentNoteTitles();
+export function noteExistsInUrl(noteName: string, location?: { pathname: string }): boolean {
+  const currentNotes = getCurrentNoteTitles(location);
   return currentNotes.includes(noteName);
 }
 
 // Utility function to append a note to the current URL
-export function appendNoteToUrl(noteName: string): string {
-  const currentNotes = getCurrentNoteTitles();
+export function appendNoteToUrl(noteName: string, location?: { pathname: string }): string {
+  const currentNotes = getCurrentNoteTitles(location);
   
   // If note already exists, don't add it again
   if (currentNotes.includes(noteName)) {
-    return window.location.pathname;
+    return location?.pathname || window.location.pathname;
   }
   
   // Add the new note to the end
@@ -30,8 +30,8 @@ export function appendNoteToUrl(noteName: string): string {
 }
 
 // Utility function to navigate to a note (either append or focus existing)
-export function navigateToNote(noteName: string, navigate: (path: string) => void) {
-  const currentNotes = getCurrentNoteTitles();
+export function navigateToNote(noteName: string, navigate: (path: string) => void, location?: { pathname: string }) {
+  const currentNotes = getCurrentNoteTitles(location);
   
   if (currentNotes.includes(noteName)) {
     // Note already exists, just navigate to current URL (no change needed)
@@ -40,7 +40,7 @@ export function navigateToNote(noteName: string, navigate: (path: string) => voi
   }
   
   // Append the new note to the URL
-  const newUrl = appendNoteToUrl(noteName);
+  const newUrl = appendNoteToUrl(noteName, location);
   navigate(newUrl);
 }
 
@@ -49,14 +49,14 @@ export function useNoteNavigation() {
   const navigate = useNavigate();
   const location = useLocation();
   
-  const currentNotes = getCurrentNoteTitles();
+  const currentNotes = getCurrentNoteTitles(location);
   
   const goToNote = (noteName: string) => {
-    navigateToNote(noteName, navigate);
+    navigateToNote(noteName, navigate, location);
   };
   
   const noteExists = (noteName: string) => {
-    return noteExistsInUrl(noteName);
+    return noteExistsInUrl(noteName, location);
   };
   
   return {
