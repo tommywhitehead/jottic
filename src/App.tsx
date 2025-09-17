@@ -2,12 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import svgPaths from "./imports/svg-4qeuqv3u0r";
 import { useNotes } from './hooks/useNotes';
-import { useEscClose } from './hooks/useEscClose';
 import { FallbackEditor } from './components/FallbackEditor';
 import { CollaborativeEditor } from './components/CollaborativeEditor';
 import { TiptapEditor } from './components/TiptapEditor';
 import { SplitScreenEditor } from './components/SplitScreenEditor';
-import { EscCloseIndicator } from './components/EscCloseIndicator';
+import { MultiPaneEditor } from './components/MultiPaneEditor';
 import { RoomProvider, useOthers } from './lib/liveblocks';
 import './App.css';
 
@@ -83,7 +82,6 @@ function Header() {
 function AppContent() {
   const [isTyping, setIsTyping] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
-  const [indicatorPosition, setIndicatorPosition] = useState({ x: 0, y: 0 });
   const [isPageLoaded, setIsPageLoaded] = useState(false);
   const location = useLocation();
   const others = useOthers();
@@ -112,35 +110,21 @@ function AppContent() {
     window.location.href = '/';
   };
 
-  // Update indicator position - horizontally centered in editor container, vertically centered in viewport
-  const updateIndicatorPosition = () => {
-    if (editorContainerRef.current) {
-      const rect = editorContainerRef.current.getBoundingClientRect();
-      setIndicatorPosition({
-        x: rect.left + rect.width / 2,
-        y: window.innerHeight / 2
-      });
-    }
-  };
 
+  // Simple ESC close functionality
   useEffect(() => {
-    updateIndicatorPosition();
-    
-    // Update position on window resize
-    const handleResize = () => {
-      updateIndicatorPosition();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        handleCloseNote();
+      }
     };
-    
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
-  // Esc close functionality
-  const { isHolding, progress } = useEscClose({
-    onClose: handleCloseNote,
-    isActive: true, // Always active in main app
-    holdDuration: 1000
-  });
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleCloseNote]);
 
   // Handle navigation state and page load delay
   useEffect(() => {
@@ -211,13 +195,6 @@ function AppContent() {
           onTypingChange={setIsTyping}
         />
         </div>
-        
-        {/* ESC Close Indicator */}
-        <EscCloseIndicator
-          isVisible={isHolding}
-          progress={progress}
-          position={indicatorPosition}
-        />
       </div>
     </div>
   );
@@ -238,24 +215,21 @@ export default function App() {
     }
   }, [location.pathname]);
   
-  // Check if this is a split-screen URL (contains multiple path segments)
-  const isSplitScreen = () => {
+  // Check if this is a multi-pane URL (contains 2-10 path segments)
+  const isMultiPane = () => {
     const path = location.pathname;
     if (path === '/' || path === '') return false;
     
     // Remove leading slash and split by '/'
     const segments = path.substring(1).split('/');
-    return segments.length >= 2;
+    return segments.length >= 2 && segments.length <= 10;
   };
   
-  // Parse split-screen URLs
-  const getSplitScreenNotes = () => {
+  // Parse multi-pane URLs
+  const getMultiPaneNotes = () => {
     const path = location.pathname;
     const segments = path.substring(1).split('/');
-    return {
-      leftNote: segments[0] || 'home',
-      rightNote: segments[1] || 'home'
-    };
+    return segments.filter(segment => segment.length > 0);
   };
   
   // Get document title from URL path for room ID (single note)
@@ -270,15 +244,26 @@ export default function App() {
   const documentTitle = getDocumentTitle();
   const roomId = `document-${documentTitle}`;
 
-  // Render split-screen if URL has multiple segments
-  if (isSplitScreen()) {
-    const { leftNote, rightNote } = getSplitScreenNotes();
+  // Render multi-pane if URL has 2-10 segments
+  if (isMultiPane()) {
+    const noteTitles = getMultiPaneNotes();
+    
+    // For exactly 2 notes, use the optimized SplitScreenEditor
+    if (noteTitles.length === 2) {
+      return (
+        <ErrorBoundary>
+          <SplitScreenEditor 
+            leftNoteTitle={noteTitles[0]}
+            rightNoteTitle={noteTitles[1]}
+          />
+        </ErrorBoundary>
+      );
+    }
+    
+    // For 3-10 notes, use MultiPaneEditor
     return (
       <ErrorBoundary>
-        <SplitScreenEditor 
-          leftNoteTitle={leftNote}
-          rightNoteTitle={rightNote}
-        />
+        <MultiPaneEditor noteTitles={noteTitles} />
       </ErrorBoundary>
     );
   }

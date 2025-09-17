@@ -2,9 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { RoomProvider, useOthers } from '../lib/liveblocks';
 import { TiptapEditor } from './TiptapEditor';
 import { useNotes } from '../hooks/useNotes';
-import { useEscClose } from '../hooks/useEscClose';
 import { useActivePane } from '../hooks/useActivePane';
-import { EscCloseIndicator } from './EscCloseIndicator';
 import svgPaths from '../imports/svg-4qeuqv3u0r';
 
 interface SplitScreenEditorProps {
@@ -88,7 +86,6 @@ function Header() {
 
 export function SplitScreenEditor({ leftNoteTitle, rightNoteTitle }: SplitScreenEditorProps) {
   const [isTyping, setIsTyping] = useState(false);
-  const [indicatorPosition, setIndicatorPosition] = useState({ x: 0, y: 0 });
   const [isPageLoaded, setIsPageLoaded] = useState(false);
   
   // Refs for the panes
@@ -116,43 +113,20 @@ export function SplitScreenEditor({ leftNoteTitle, rightNoteTitle }: SplitScreen
     }
   };
 
-  // Update indicator position - horizontally centered in active pane, vertically centered in viewport
-  const updateIndicatorPosition = () => {
-    if (activePane === 'left' && leftPaneRef.current) {
-      const rect = leftPaneRef.current.getBoundingClientRect();
-      setIndicatorPosition({
-        x: rect.left + rect.width / 2,
-        y: window.innerHeight / 2
-      });
-    } else if (activePane === 'right' && rightPaneRef.current) {
-      const rect = rightPaneRef.current.getBoundingClientRect();
-      setIndicatorPosition({
-        x: rect.left + rect.width / 2,
-        y: window.innerHeight / 2
-      });
-    }
-  };
-
+  // Simple ESC close functionality
   useEffect(() => {
-    updateIndicatorPosition();
-  }, [activePane]);
-
-  // Update position on window resize
-  useEffect(() => {
-    const handleResize = () => {
-      updateIndicatorPosition();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        handleCloseNote();
+      }
     };
-    
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [activePane]);
 
-  // Esc close functionality
-  const { isHolding, progress } = useEscClose({
-    onClose: handleCloseNote,
-    isActive: !!activePane,
-    holdDuration: 1000
-  });
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [leftNoteTitle, rightNoteTitle, handleCloseNote]);
 
   // Page load delay
   useEffect(() => {
@@ -245,14 +219,6 @@ export function SplitScreenEditor({ leftNoteTitle, rightNoteTitle }: SplitScreen
           </div>
           </div>
         </div>
-        
-        {/* ESC Close Indicator */}
-        <EscCloseIndicator
-          isVisible={isHolding}
-          progress={progress}
-          position={indicatorPosition}
-        />
-        
     </div>
   );
 }
