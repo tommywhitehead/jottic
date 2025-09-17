@@ -2,6 +2,10 @@ import React, { useEffect, useCallback, useState } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import { useLiveblocksExtension } from '@liveblocks/react-tiptap';
 import StarterKit from '@tiptap/starter-kit';
+import { Document } from '@tiptap/extension-document';
+import { Paragraph } from '@tiptap/extension-paragraph';
+import { Text } from '@tiptap/extension-text';
+import { HardBreak } from '@tiptap/extension-hard-break';
 import { useStorage, useMutation, useMyPresence, useUpdateMyPresence, useOthers } from '../lib/liveblocks';
 
 // Helper function to convert hex color to hue rotation
@@ -83,70 +87,33 @@ export function TiptapEditor({
   }, []);
 
   // Liveblocks extension for collaboration
-  const liveblocks = useLiveblocksExtension();
+  const liveblocks = useLiveblocksExtension({
+    // Disable mention functionality completely
+    mentions: false,
+  });
 
-  // Initialize Tiptap editor
+  // Initialize Tiptap editor with working configuration
   const editor = useEditor({
     extensions: [
+      // Use StarterKit for basic functionality with Liveblocks
       liveblocks,
       StarterKit.configure({
-        history: false, // Disable history since Liveblocks handles it
-        heading: {
-          levels: [1, 2, 3, 4, 5, 6],
-        },
-        paragraph: {
-          HTMLAttributes: {
-            class: 'tiptap-paragraph',
-          },
-        },
-        bold: {
-          HTMLAttributes: {
-            class: 'tiptap-bold',
-          },
-        },
-        italic: {
-          HTMLAttributes: {
-            class: 'tiptap-italic',
-          },
-        },
-        code: {
-          HTMLAttributes: {
-            class: 'tiptap-code',
-          },
-        },
-        codeBlock: {
-          HTMLAttributes: {
-            class: 'tiptap-code-block',
-          },
-        },
-        blockquote: {
-          HTMLAttributes: {
-            class: 'tiptap-blockquote',
-          },
-        },
-        bulletList: {
-          HTMLAttributes: {
-            class: 'tiptap-bullet-list',
-          },
-        },
-        orderedList: {
-          HTMLAttributes: {
-            class: 'tiptap-ordered-list',
-          },
-        },
-        listItem: {
-          HTMLAttributes: {
-            class: 'tiptap-list-item',
-          },
-        },
-        horizontalRule: {
-          HTMLAttributes: {
-            class: 'tiptap-horizontal-rule',
-          },
-        },
+        // Disable all formatting features
+        bold: false,
+        italic: false,
+        code: false,
+        codeBlock: false,
+        blockquote: false,
+        bulletList: false,
+        orderedList: false,
+        listItem: false,
+        horizontalRule: false,
+        heading: false,
+        // Keep only basic text editing
+        history: false,
       }),
     ],
-    content: content, // Use Liveblocks content directly
+    content: content, // Use Liveblocks content
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
       updateContent(html);

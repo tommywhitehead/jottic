@@ -15,6 +15,10 @@ const client = createClient({
       },
     }));
   },
+  resolveMentionSuggestions: async ({ text, roomId }) => {
+    // Disable mention functionality - return empty array
+    return [];
+  },
 });
 
 // Define the types for our collaborative document
