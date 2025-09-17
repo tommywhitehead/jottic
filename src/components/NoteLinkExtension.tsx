@@ -27,11 +27,12 @@ export const NoteLinkExtension = Extension.create({
           decorations: (state) => {
             const decorations: Decoration[] = [];
             const doc = state.doc;
+            // Match note links like /notename/ but exclude URLs
             const noteLinkRegex = /\/[a-zA-Z0-9-_]+\//g;
             const currentLinks = new Set<string>();
 
             doc.descendants((node, pos) => {
-              if (node.isText) {
+              if (node.isText && node.text) {
                 const text = node.text;
                 let match;
 
@@ -39,6 +40,21 @@ export const NoteLinkExtension = Extension.create({
                   const from = pos + match.index;
                   const to = pos + match.index + match[0].length;
                   const noteName = match[0].slice(1, -1); // Remove leading and trailing slashes
+                  
+                  // Check if this is part of a URL by looking at surrounding context
+                  const beforeMatch = text.substring(Math.max(0, match.index - 30), match.index);
+                  const afterMatch = text.substring(to, Math.min(text.length, to + 30));
+                  
+                  // Skip if it looks like a URL - check for common URL patterns
+                  const isUrl = beforeMatch.includes('http://') || 
+                               beforeMatch.includes('https://') || 
+                               beforeMatch.includes('www.') ||
+                               // Check for domain.com/path pattern - only if the domain is immediately before the match
+                               /[a-zA-Z0-9-]+\.[a-zA-Z]{2,}\/$/.test(beforeMatch + match[0]);
+                  
+                  if (isUrl) {
+                    continue;
+                  }
                   
                   // Track this link
                   currentLinks.add(noteName);
@@ -70,11 +86,6 @@ export const NoteLinkExtension = Extension.create({
             return DecorationSet.create(doc, decorations);
           },
           handleKeyDown: () => {
-            // Mark that user has started interacting
-            hasUserInteracted = true;
-            return false;
-          },
-          handleInput: () => {
             // Mark that user has started interacting
             hasUserInteracted = true;
             return false;
