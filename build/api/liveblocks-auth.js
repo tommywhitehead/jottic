@@ -2,6 +2,27 @@
 import { Liveblocks } from "@liveblocks/node";
 import { createClient } from "@supabase/supabase-js";
 
+// Check environment variables
+console.log('Environment check:', {
+  hasLiveblocksSecret: !!process.env.LIVEBLOCKS_SECRET_KEY,
+  hasSupabaseUrl: !!process.env.SUPABASE_URL,
+  hasSupabaseAnonKey: !!process.env.SUPABASE_ANON_KEY,
+  liveblocksSecretPrefix: process.env.LIVEBLOCKS_SECRET_KEY?.substring(0, 10) + '...',
+  supabaseUrl: process.env.SUPABASE_URL
+});
+
+if (!process.env.LIVEBLOCKS_SECRET_KEY) {
+  throw new Error('LIVEBLOCKS_SECRET_KEY environment variable is required');
+}
+
+if (!process.env.SUPABASE_URL) {
+  throw new Error('SUPABASE_URL environment variable is required');
+}
+
+if (!process.env.SUPABASE_ANON_KEY) {
+  throw new Error('SUPABASE_ANON_KEY environment variable is required');
+}
+
 const liveblocks = new Liveblocks({
   secret: process.env.LIVEBLOCKS_SECRET_KEY,
 });
@@ -12,20 +33,25 @@ const supabase = createClient(
 );
 
 export default async function handler(req, res) {
+  console.log('Function called with method:', req.method);
+  
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') {
+    console.log('Handling OPTIONS request');
     return res.status(200).end();
   }
 
   if (req.method !== 'POST') {
+    console.log('Method not allowed:', req.method);
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
+    console.log('Processing POST request');
     // Get the authorization header
     const authorization = req.headers.authorization;
     
