@@ -10,16 +10,31 @@ const client = createClient({
       // Get the current session
       const { data: { session }, error } = await supabase.auth.getSession();
       
+      let authToken;
       if (error || !session?.access_token) {
-        throw new Error("No valid session found");
+        // In development, fall back to using the anon key as a token
+        if (import.meta.env.DEV) {
+          console.log('No session found, using anon key for development');
+          authToken = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        } else {
+          throw new Error("No valid session found");
+        }
+      } else {
+        // In development, always use anon key instead of real session token
+        if (import.meta.env.DEV) {
+          console.log('Development mode: using anon key instead of session token');
+          authToken = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        } else {
+          authToken = session.access_token;
+        }
       }
 
-      // Make the request to our auth endpoint with the session token
+      // Make the request to our auth endpoint with the token
       const response = await fetch("/api/liveblocks-auth", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${session.access_token}`,
+          "Authorization": `Bearer ${authToken}`,
         },
         body: JSON.stringify({ room }),
       });
