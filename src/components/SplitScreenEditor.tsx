@@ -53,6 +53,7 @@ function PaneWithUserCount({
       </div>
       
       <TiptapEditor 
+        key={noteTitle}
         documentTitle={noteTitle}
         onSave={onSave}
         initialContent={note?.content || ''}

@@ -12,6 +12,7 @@ import { LoginButton } from './components/LoginButton';
 import { AuthCallback } from './components/AuthCallback';
 import { AuthenticatedRoomProvider } from './components/AuthenticatedRoomProvider';
 import { useOthers } from './lib/liveblocks';
+import { generateRandomId } from './lib/randomId';
 import './App.css';
 
 // Error boundary component
@@ -102,9 +103,6 @@ function AppContent() {
   // Get document title from URL path
   const getDocumentTitle = () => {
     const path = location.pathname;
-    if (path === '/' || path === '') {
-      return 'home';
-    }
     // Remove leading slash and return the path as document name
     return path.substring(1);
   };
@@ -117,26 +115,8 @@ function AppContent() {
   // Use the notes hook for Supabase integration
   const { note, loading, saving, error, saveNote } = useNotes(documentTitle);
 
-  // Handle closing note - navigate to home
-  const handleCloseNote = () => {
-    navigate('/');
-  };
 
 
-  // Simple ESC close functionality
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        handleCloseNote();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [handleCloseNote]);
 
   // Handle navigation state and page load delay
   useEffect(() => {
@@ -182,7 +162,7 @@ function AppContent() {
       
       <div className="main-layout">
         <div className="editor-container" ref={editorContainerRef}>
-        <div className={`document-title-fade ${isTyping && isPageLoaded ? 'faded' : ''} ${documentTitle === 'home' ? 'hidden' : ''}`}>
+        <div className={`document-title-fade ${isTyping && isPageLoaded ? 'faded' : ''}`}>
           <div className="document-title">
             /{documentTitle}
             {others.length > 0 && (
@@ -190,9 +170,6 @@ function AppContent() {
                 {others.length + 1} ppl
               </span>
             )}
-            <span className="close-text" onClick={handleCloseNote}>
-              close
-            </span>
           </div>
         </div>
         
@@ -204,8 +181,9 @@ function AppContent() {
         </div>
         
         <TiptapEditor 
+          key={documentTitle}
           documentTitle={documentTitle}
-          onSave={documentTitle !== 'home' ? saveNote : undefined}
+          onSave={saveNote}
           initialContent={note?.content || ''}
           onTypingChange={setIsTyping}
         />
@@ -217,6 +195,18 @@ function AppContent() {
 
 function AppWithAuth() {
   const location = useLocation();
+  const navigate = useNavigate();
+  
+  // Auto-redirect to new note when visiting root URL
+  useEffect(() => {
+    const path = location.pathname;
+    if (path === '/' || path === '') {
+      // Generate a new random ID and redirect to it
+      const randomId = generateRandomId();
+      navigate(`/${randomId}`, { replace: true });
+      return;
+    }
+  }, [location.pathname, navigate]);
   
   // Update document title based on current URL
   useEffect(() => {
@@ -250,9 +240,6 @@ function AppWithAuth() {
   // Get document title from URL path for room ID (single note)
   const getDocumentTitle = () => {
     const path = location.pathname;
-    if (path === '/' || path === '') {
-      return 'home';
-    }
     return path.substring(1);
   };
   

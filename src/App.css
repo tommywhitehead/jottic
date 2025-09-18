@@ -466,42 +466,7 @@
   flex: 1;
 }
 
-/* ESC Close Indicator */
-.esc-close-indicator {
-  animation: escCloseFadeIn 0.2s ease-out;
-}
 
-.esc-close-circle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 60px;
-  height: 60px;
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 50%;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  backdrop-filter: blur(10px);
-}
-
-.esc-close-text {
-  position: absolute;
-  font-family: 'Martian Mono', sans-serif;
-  font-size: 10px;
-  font-weight: bold;
-  color: #464646;
-  font-variation-settings: 'wdth' 100;
-}
-
-@keyframes escCloseFadeIn {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.8);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
-}
 
 /* Note Link Styles */
 .note-link {

@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState } from 'react';
+import React, { useEffect, useCallback, useState, useRef } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import { useLiveblocksExtension } from '@liveblocks/react-tiptap';
 import StarterKit from '@tiptap/starter-kit';
@@ -58,6 +58,9 @@ export function TiptapEditor({
   onUserCountChange
 }: TiptapEditorProps) {
   const content = useStorage((root) => root?.content || '');
+  
+  // Track if we've initialized content for this document
+  const initializedRef = useRef<string | null>(null);
   
   // Cursor and presence management
   const [myPresence, updateMyPresence] = useMyPresence();
@@ -124,7 +127,7 @@ export function TiptapEditor({
         onLinkCreated: goToNote,
       }),
     ],
-    content: content, // Use Liveblocks content
+    content: content || '', // Use Liveblocks content only
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
       
@@ -158,13 +161,14 @@ export function TiptapEditor({
     },
   });
 
-  // Initialize content from Supabase to Liveblocks storage (only once)
+  // Initialize content from Supabase to Liveblocks storage when document changes
   useEffect(() => {
-    if (initialContent && content === undefined) {
-      // Wait a bit for storage to be ready, then initialize
+    // Only initialize once per document title
+    if (initialContent !== undefined && initializedRef.current !== documentTitle) {
       const timer = setTimeout(() => {
         try {
           updateContent(initialContent);
+          initializedRef.current = documentTitle;
         } catch (error) {
           console.error('Failed to initialize Liveblocks content:', error);
           if (onError) onError();
@@ -173,7 +177,7 @@ export function TiptapEditor({
       
       return () => clearTimeout(timer);
     }
-  }, [initialContent, content, updateContent, onError]);
+  }, [documentTitle, initialContent, updateContent, onError]);
 
 
   // Focus editor on mount
