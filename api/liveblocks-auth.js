@@ -66,14 +66,35 @@ export default async function handler(req, res) {
     // Authorize the session and get the token
     const { status, body } = await session.authorize();
     
+    console.log('Liveblocks authorization response:', { status, bodyType: typeof body, body });
+    
     if (status !== 200) {
       console.error('Liveblocks authorization failed:', body);
       return res.status(status).json(body);
     }
 
+    // Extract token from response - body might be a string or object
+    let token = body;
+    if (typeof body === 'object' && body.token) {
+      token = body.token;
+    } else if (typeof body === 'string') {
+      try {
+        const parsed = JSON.parse(body);
+        token = parsed.token;
+      } catch (e) {
+        // If it's not JSON, use the string as token
+        token = body;
+      }
+    }
+
+    if (!token) {
+      console.error('No token in Liveblocks response:', body);
+      return res.status(500).json({ error: "No token received from Liveblocks" });
+    }
+
     // Return the Liveblocks token in the expected format
-    return res.status(200).json({
-      token: body.token,
+    const response = {
+      token: token,
       user: {
         id: user.id,
         info: {
@@ -82,7 +103,11 @@ export default async function handler(req, res) {
           avatar: user.user_metadata?.avatar_url || null,
         },
       },
-    });
+    };
+    
+    console.log('Sending response:', { hasToken: !!response.token, tokenLength: response.token?.length, user: response.user });
+    
+    return res.status(200).json(response);
   } catch (error) {
     console.error("Liveblocks auth error:", error);
     return res.status(500).json({ error: "Authentication failed" });
