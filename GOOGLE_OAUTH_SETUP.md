@@ -85,13 +85,64 @@ LIVEBLOCKS_SECRET_KEY=your_liveblocks_secret_key
 
 ## Step 5: Deploy to Production
 
-1. **Update your deployment environment variables**
-   - Add all the environment variables from Step 3
-   - Make sure to use production URLs
+### Environment Variables Setup
 
-2. **Update Google OAuth settings**
-   - Add your production domain to authorized redirect URIs in Google Cloud Console
-   - Update Supabase URL configuration with your production domain
+1. **Copy the example environment file**
+   ```bash
+   cp .env.example .env.local
+   ```
+
+2. **Update your `.env.local` file with your actual values**
+   - Replace all placeholder values with your actual credentials
+   - For development, keep `VITE_OAUTH_REDIRECT_URL=http://localhost:5173/auth/callback`
+
+3. **Set up production environment variables in Vercel**
+   - Go to your Vercel project dashboard
+   - Navigate to Settings → Environment Variables
+   - Add all the variables from `.env.example`:
+     - `VITE_SUPABASE_URL` (your Supabase project URL)
+     - `VITE_SUPABASE_ANON_KEY` (your Supabase anon key)
+     - `VITE_LIVEBLOCKS_SECRET_KEY` (your Liveblocks secret key)
+     - `VITE_OAUTH_REDIRECT_URL` (your production domain + `/auth/callback`)
+     - `SUPABASE_URL` (same as VITE_SUPABASE_URL)
+     - `SUPABASE_ANON_KEY` (same as VITE_SUPABASE_ANON_KEY)
+     - `LIVEBLOCKS_SECRET_KEY` (same as VITE_LIVEBLOCKS_SECRET_KEY)
+
+### OAuth Configuration Updates
+
+4. **Update Google Cloud Console**
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Navigate to APIs & Services → Credentials
+   - Edit your OAuth 2.0 Client ID
+   - Add your production domain to authorized redirect URIs:
+     - `https://your-project-ref.supabase.co/auth/v1/callback` (keep this)
+     - `https://yourdomain.com/auth/callback` (add your production domain)
+
+5. **Update Supabase URL Configuration**
+   - Go to your Supabase Dashboard
+   - Navigate to Authentication → URL Configuration
+   - Add your production domain to Site URL and Redirect URLs:
+     - Site URL: `https://yourdomain.com`
+     - Redirect URLs: `https://yourdomain.com/auth/callback`
+
+### Deployment Steps
+
+6. **Deploy to Vercel**
+   ```bash
+   # If using Vercel CLI
+   vercel --prod
+   
+   # Or push to your connected Git repository
+   git add .
+   git commit -m "Configure OAuth for production"
+   git push origin main
+   ```
+
+7. **Verify the deployment**
+   - Visit your production URL
+   - Test the login flow
+   - Check that OAuth redirects work correctly
+   - Verify Liveblocks authentication is working
 
 ## How It Works
 
@@ -112,6 +163,12 @@ LIVEBLOCKS_SECRET_KEY=your_liveblocks_secret_key
 - Verify redirect URLs in Google Cloud Console
 - Check Supabase URL configuration
 - Ensure your domain is added to allowed origins
+
+### Production deployment issues
+- **OAuth redirects to localhost in production**: Check that `VITE_OAUTH_REDIRECT_URL` is set to your production domain
+- **API routes not working**: Verify Vercel configuration includes the functions section for `/api/liveblocks-auth`
+- **Environment variables not loading**: Ensure all variables are set in Vercel dashboard with correct names
+- **CORS errors**: Check that your production domain is added to Supabase allowed origins
 
 ### Rate limits still occurring
 - Verify you're using the secret key (not public key)

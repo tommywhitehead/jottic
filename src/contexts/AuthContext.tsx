@@ -50,10 +50,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   const signInWithGoogle = async () => {
+    // Use environment variable for redirect URL, fallback to current origin
+    const redirectUrl = import.meta.env.VITE_OAUTH_REDIRECT_URL || `${window.location.origin}/auth/callback`;
+    
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: redirectUrl,
       },
     });
     if (error) {
