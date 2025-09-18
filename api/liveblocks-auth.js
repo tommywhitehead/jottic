@@ -2,15 +2,7 @@
 const { Liveblocks } = require("@liveblocks/node");
 const { createClient } = require("@supabase/supabase-js");
 
-// Check environment variables
-console.log('Environment check:', {
-  hasLiveblocksSecret: !!process.env.LIVEBLOCKS_SECRET_KEY,
-  hasSupabaseUrl: !!process.env.SUPABASE_URL,
-  hasSupabaseAnonKey: !!process.env.SUPABASE_ANON_KEY,
-  liveblocksSecretPrefix: process.env.LIVEBLOCKS_SECRET_KEY?.substring(0, 10) + '...',
-  supabaseUrl: process.env.SUPABASE_URL
-});
-
+// Validate required environment variables
 if (!process.env.LIVEBLOCKS_SECRET_KEY) {
   throw new Error('LIVEBLOCKS_SECRET_KEY environment variable is required');
 }
@@ -33,25 +25,20 @@ const supabase = createClient(
 );
 
 module.exports = async function handler(req, res) {
-  console.log('Function called with method:', req.method);
-  
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') {
-    console.log('Handling OPTIONS request');
     return res.status(200).end();
   }
 
   if (req.method !== 'POST') {
-    console.log('Method not allowed:', req.method);
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    console.log('Processing POST request');
     // Get the authorization header
     const authorization = req.headers.authorization;
     
@@ -92,8 +79,6 @@ module.exports = async function handler(req, res) {
     // Authorize the session and get the token
     const { status, body } = await session.authorize();
     
-    console.log('Liveblocks authorization response:', { status, bodyType: typeof body, body });
-    
     if (status !== 200) {
       console.error('Liveblocks authorization failed:', body);
       return res.status(status).json(body);
@@ -130,8 +115,6 @@ module.exports = async function handler(req, res) {
         },
       },
     };
-    
-    console.log('Sending response:', { hasToken: !!response.token, tokenLength: response.token?.length, user: response.user });
     
     return res.status(200).json(response);
   } catch (error) {
