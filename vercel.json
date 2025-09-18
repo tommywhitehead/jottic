@@ -3,16 +3,7 @@
   "outputDirectory": "build",
   "framework": "vite",
   "installCommand": "npm install",
-  "functions": {
-    "public/api/liveblocks-auth.js": {
-      "runtime": "@vercel/node@3.0.7"
-    }
-  },
   "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/api/$1"
-    },
     {
       "source": "/(.*)",
       "destination": "/index.html"

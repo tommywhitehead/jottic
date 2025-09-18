@@ -1,9 +1,33 @@
 import { Liveblocks } from "@liveblocks/node";
 import { createClient } from "@supabase/supabase-js";
+import fs from 'fs';
+import path from 'path';
 
 export function apiPlugin(env = {}) {
   return {
     name: 'api-plugin',
+    writeBundle() {
+      // Copy API function to build directory after build
+      const apiDir = path.join(process.cwd(), 'api');
+      const buildApiDir = path.join(process.cwd(), 'build', 'api');
+      
+      if (fs.existsSync(apiDir)) {
+        if (!fs.existsSync(buildApiDir)) {
+          fs.mkdirSync(buildApiDir, { recursive: true });
+        }
+        
+        const files = fs.readdirSync(apiDir);
+        files.forEach(file => {
+          if (file.endsWith('.js')) {
+            fs.copyFileSync(
+              path.join(apiDir, file),
+              path.join(buildApiDir, file)
+            );
+            console.log(`Copied API function: ${file}`);
+          }
+        });
+      }
+    },
     configureServer(server) {
       // Get environment variables from Vite
       const liveblocksSecret = env.LIVEBLOCKS_SECRET_KEY || env.VITE_LIVEBLOCKS_SECRET_KEY || "sk_dev_mock_secret_key_for_development_only";
