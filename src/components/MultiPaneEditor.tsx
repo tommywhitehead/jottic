@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { RoomProvider, useOthers } from '../lib/liveblocks';
+import { useOthers } from '../lib/liveblocks';
+import { AuthenticatedRoomProvider } from './AuthenticatedRoomProvider';
 import { TiptapEditor } from './TiptapEditor';
 import { useNotes } from '../hooks/useNotes';
 import svgPaths from '../imports/svg-4qeuqv3u0r';
@@ -299,7 +300,7 @@ export function MultiPaneEditor({ noteTitles }: MultiPaneEditorProps) {
               className={`split-pane ${isPaneActive(index) ? 'active' : 'inactive'}`} 
               onClick={() => handlePaneClick(index)}
             >
-              <RoomProvider 
+              <AuthenticatedRoomProvider 
                 id={`document-${noteTitle}`}
                 initialPresence={{
                   cursor: null,
@@ -321,7 +322,7 @@ export function MultiPaneEditor({ noteTitles }: MultiPaneEditorProps) {
                   isPageLoaded={isPageLoaded}
                   onClose={() => handleCloseNoteByIndex(index)}
                 />
-              </RoomProvider>
+              </AuthenticatedRoomProvider>
             </div>
           ))}
         </div>

@@ -28,6 +28,12 @@ CREATE TRIGGER update_notes_updated_at
 -- Enable Row Level Security (RLS)
 ALTER TABLE notes ENABLE ROW LEVEL SECURITY;
 
--- Create policy to allow all operations (you can restrict this later)
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Allow all operations on notes" ON notes;
+DROP POLICY IF EXISTS "Allow all operations on notes for authenticated users" ON notes;
+DROP POLICY IF EXISTS "Allow all operations on notes for anonymous users" ON notes;
+
+-- Create a simple policy that allows all operations for now (for development)
+-- In production, you would want to restrict this based on user ownership
 CREATE POLICY "Allow all operations on notes" ON notes
   FOR ALL USING (true);

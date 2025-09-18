@@ -85,10 +85,12 @@ export function TiptapEditor({
     console.log('Others:', others.map(o => ({ name: o.presence?.user?.name, color: o.presence?.user?.color })));
   }, [myPresence, others]);
   
-  // Mutation to update content
+  // Mutation to update content - only call when storage is loaded
   const updateContent = useMutation(({ storage }, newContent: string) => {
-    storage.set('content', newContent);
-    storage.set('lastModified', Date.now());
+    if (storage) {
+      storage.set('content', newContent);
+      storage.set('lastModified', Date.now());
+    }
   }, []);
 
   // Liveblocks extension for collaboration
@@ -125,7 +127,11 @@ export function TiptapEditor({
     content: content, // Use Liveblocks content
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
-      updateContent(html);
+      
+      // Only update content if storage is available
+      if (content !== undefined) {
+        updateContent(html);
+      }
       
       // Notify parent about typing state
       if (onTypingChange) {
@@ -154,13 +160,18 @@ export function TiptapEditor({
 
   // Initialize content from Supabase to Liveblocks storage (only once)
   useEffect(() => {
-    if (initialContent && !content) {
-      try {
-        updateContent(initialContent);
-      } catch (error) {
-        console.error('Failed to initialize Liveblocks content:', error);
-        if (onError) onError();
-      }
+    if (initialContent && content === undefined) {
+      // Wait a bit for storage to be ready, then initialize
+      const timer = setTimeout(() => {
+        try {
+          updateContent(initialContent);
+        } catch (error) {
+          console.error('Failed to initialize Liveblocks content:', error);
+          if (onError) onError();
+        }
+      }, 100);
+      
+      return () => clearTimeout(timer);
     }
   }, [initialContent, content, updateContent, onError]);
 

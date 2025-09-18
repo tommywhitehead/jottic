@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, Routes, Route } from 'react-router-dom';
 import svgPaths from "./imports/svg-4qeuqv3u0r";
 import { useNotes } from './hooks/useNotes';
 import { FallbackEditor } from './components/FallbackEditor';
@@ -7,7 +7,11 @@ import { CollaborativeEditor } from './components/CollaborativeEditor';
 import { TiptapEditor } from './components/TiptapEditor';
 import { SplitScreenEditor } from './components/SplitScreenEditor';
 import { MultiPaneEditor } from './components/MultiPaneEditor';
-import { RoomProvider, useOthers } from './lib/liveblocks';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { LoginButton } from './components/LoginButton';
+import { AuthCallback } from './components/AuthCallback';
+import { AuthenticatedRoomProvider } from './components/AuthenticatedRoomProvider';
+import { useOthers } from './lib/liveblocks';
 import './App.css';
 
 // Error boundary component
@@ -68,12 +72,19 @@ function JotticLogo() {
 
 
 function Header() {
+  const { user } = useAuth();
+  
   return (
     <div className="header">
       <JotticLogo />
       <div className="header-nav">
         <span className="header-link">dark</span>
-        <span className="header-link">login</span>
+        <LoginButton />
+        {user && (
+          <span className="header-link" style={{ fontSize: '12px', opacity: 0.7 }}>
+            {user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'}
+          </span>
+        )}
       </div>
     </div>
   );
@@ -204,7 +215,7 @@ function AppContent() {
   );
 }
 
-export default function App() {
+function AppWithAuth() {
   const location = useLocation();
   
   // Update document title based on current URL
@@ -275,7 +286,7 @@ export default function App() {
   // Render single note view
   return (
     <ErrorBoundary>
-      <RoomProvider 
+      <AuthenticatedRoomProvider 
         id={roomId}
         initialPresence={{
           cursor: null,
@@ -291,7 +302,18 @@ export default function App() {
         }}
       >
         <AppContent />
-      </RoomProvider>
+      </AuthenticatedRoomProvider>
     </ErrorBoundary>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <Routes>
+        <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="*" element={<AppWithAuth />} />
+      </Routes>
+    </AuthProvider>
   );
 }

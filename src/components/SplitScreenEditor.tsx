@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { RoomProvider, useOthers } from '../lib/liveblocks';
+import { useOthers } from '../lib/liveblocks';
+import { AuthenticatedRoomProvider } from './AuthenticatedRoomProvider';
 import { TiptapEditor } from './TiptapEditor';
 import { useNotes } from '../hooks/useNotes';
 import { useActivePane } from '../hooks/useActivePane';
@@ -171,7 +172,7 @@ export function SplitScreenEditor({ leftNoteTitle, rightNoteTitle }: SplitScreen
           <div className="split-screen-layout">
           {/* Left pane */}
           <div className={`split-pane ${isLeftActive ? 'active' : 'inactive'}`} ref={leftPaneRef}>
-            <RoomProvider 
+            <AuthenticatedRoomProvider 
               id={`document-${leftNoteTitle}`}
               initialPresence={{
                 cursor: null,
@@ -195,12 +196,12 @@ export function SplitScreenEditor({ leftNoteTitle, rightNoteTitle }: SplitScreen
                 isPageLoaded={isPageLoaded}
                 onClose={() => navigate(`/${rightNoteTitle}`)}
               />
-            </RoomProvider>
+            </AuthenticatedRoomProvider>
           </div>
 
           {/* Right pane */}
           <div className={`split-pane ${isRightActive ? 'active' : 'inactive'}`} ref={rightPaneRef}>
-            <RoomProvider 
+            <AuthenticatedRoomProvider 
               id={`document-${rightNoteTitle}`}
               initialPresence={{
                 cursor: null,
@@ -224,7 +225,7 @@ export function SplitScreenEditor({ leftNoteTitle, rightNoteTitle }: SplitScreen
                 isPageLoaded={isPageLoaded}
                 onClose={() => navigate(`/${leftNoteTitle}`)}
               />
-            </RoomProvider>
+            </AuthenticatedRoomProvider>
           </div>
           </div>
         </div>

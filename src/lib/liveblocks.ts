@@ -1,12 +1,84 @@
 import { createClient } from "@liveblocks/client";
 import { createRoomContext } from "@liveblocks/react";
+import { supabase } from "./supabase";
 
-// Create Liveblocks client
+// Create Liveblocks client with authentication
 const client = createClient({
-  publicApiKey: import.meta.env.VITE_LIVEBLOCKS_PUBLIC_KEY || 'pk_test_2uHhOQ-SrPlXZZyyNBgdFst8o5D9VReJnvcgdkFHuTqebbAPpSpX4N-MTV3uA8EE',
+  // Use authentication endpoint for proper room access
+  authEndpoint: async (room) => {
+    try {
+      // Get the current session
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error || !session?.access_token) {
+        throw new Error("No valid session found");
+      }
+
+      // Make the request to our auth endpoint with the session token
+      const response = await fetch("/api/liveblocks-auth", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ room }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Auth endpoint error:', response.status, errorText);
+        throw new Error(`Auth failed: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('Auth endpoint response:', result);
+      
+      // Validate the response format
+      if (!result || !result.token) {
+        console.error('Invalid auth response format:', result);
+        throw new Error('Invalid auth response: missing token');
+      }
+
+      return result;
+    } catch (error) {
+      console.error("Liveblocks auth error:", error);
+      throw error;
+    }
+  },
   throttle: 16, // 60fps
   resolveUsers: async ({ userIds }) => {
-    // Force all guest colors to be light gray (ghost-like)
+    // Get user info from Supabase for authenticated users
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        // For authenticated users, return their actual info
+        return userIds.map((userId) => {
+          if (userId === session.user.id) {
+            return {
+              id: userId,
+              info: {
+                name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
+                color: `#${Math.floor(Math.random()*16777215).toString(16)}`,
+                avatar: session.user.user_metadata?.avatar_url || null,
+              },
+            };
+          }
+          // For other users, return basic info
+          return {
+            id: userId,
+            info: {
+              name: `User ${userId.slice(-3)}`,
+              color: '#CCCCCC',
+            },
+          };
+        });
+      }
+    } catch (error) {
+      console.error('Error resolving users:', error);
+    }
+    
+    // Fallback for unauthenticated users
     return userIds.map((userId) => ({
       id: userId,
       info: {
