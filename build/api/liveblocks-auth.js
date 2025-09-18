@@ -100,27 +100,27 @@ module.exports = async function handler(req, res) {
     }
 
     // Extract token from response - body might be a string or object
-    let token = body;
+    let liveblocksToken = body;
     if (typeof body === 'object' && body.token) {
-      token = body.token;
+      liveblocksToken = body.token;
     } else if (typeof body === 'string') {
       try {
         const parsed = JSON.parse(body);
-        token = parsed.token;
+        liveblocksToken = parsed.token;
       } catch (e) {
         // If it's not JSON, use the string as token
-        token = body;
+        liveblocksToken = body;
       }
     }
 
-    if (!token) {
+    if (!liveblocksToken) {
       console.error('No token in Liveblocks response:', body);
       return res.status(500).json({ error: "No token received from Liveblocks" });
     }
 
     // Return the Liveblocks token in the expected format
     const response = {
-      token: token,
+      token: liveblocksToken,
       user: {
         id: user.id,
         info: {
