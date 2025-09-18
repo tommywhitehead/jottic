@@ -93,15 +93,16 @@ export function apiPlugin(env = {}) {
                 // Extract the token from the header
                 const token = authorization.replace("Bearer ", "");
                 
-                console.log('Received token:', {
-                  tokenLength: token.length,
-                  tokenPrefix: token.substring(0, 20) + '...',
-                  tokenSuffix: '...' + token.substring(token.length - 20),
-                  isSupabaseAnonKey: token === supabaseAnonKey,
-                  isSupabaseAnonKeyPrefix: token.startsWith(supabaseAnonKey?.substring(0, 20))
-                });
+                // Debug token info (only in development)
+                if (process.env.NODE_ENV === 'development') {
+                  console.log('Received token:', {
+                    tokenLength: token.length,
+                    isSupabaseAnonKey: token === supabaseAnonKey,
+                    isMockToken: token.startsWith("mock-")
+                  });
+                }
                 
-                // For development, allow any token (including mock tokens)
+                // For development, handle different token types
                 let user;
                 
                 if (token === "mock-token-for-development" || token.startsWith("mock-")) {
@@ -113,8 +114,17 @@ export function apiPlugin(env = {}) {
                       color: '#CCCCCC',
                     },
                   };
+                } else if (token === supabaseAnonKey) {
+                  // In development, if the anon key is used as token, create a mock user
+                  user = {
+                    id: `dev-user-${Date.now()}`,
+                    info: {
+                      name: 'Development User',
+                      color: '#4CAF50',
+                    },
+                  };
                 } else {
-                  // Verify the token with Supabase
+                  // Verify the token with Supabase (for real user sessions)
                   const { data: { user: supabaseUser }, error } = await supabase.auth.getUser(token);
                   
                   if (error || !supabaseUser) {
