@@ -1,6 +1,6 @@
 // Liveblocks authentication endpoint with Supabase integration
-import { Liveblocks } from "@liveblocks/node";
-import { createClient } from "@supabase/supabase-js";
+const { Liveblocks } = require("@liveblocks/node");
+const { createClient } = require("@supabase/supabase-js");
 
 // Check environment variables
 console.log('Environment check:', {
@@ -32,7 +32,7 @@ const supabase = createClient(
   process.env.SUPABASE_ANON_KEY
 );
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   console.log('Function called with method:', req.method);
   
   // Enable CORS
