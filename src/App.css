@@ -54,6 +54,16 @@
 .header-link {
   font-variation-settings: 'wdth' 100;
   white-space: nowrap;
+  text-decoration: none;
+  transition: text-decoration 0.2s ease;
+}
+
+.header-link:hover {
+  text-decoration: underline;
+}
+
+.user-display {
+  text-transform: lowercase;
 }
 
 /* Editor Container */
@@ -233,6 +243,15 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+}
+
+/* Tab character styling - make tabs narrower */
+.tiptap-editor {
+  tab-size: 2;
+}
+
+.tiptap-editor * {
+  tab-size: 2;
 }
 
 .tiptap-editor-container div {
@@ -470,12 +489,12 @@
 
 /* Note Link Styles */
 .note-link {
-  text-decoration: underline !important;
+  text-decoration: none !important;
   font-weight: bold !important;
   cursor: pointer !important;
+  transition: text-decoration 0.2s ease;
 }
 
 .note-link:hover {
-  background-color: #eeeeee;
-  border-radius: 4px;
+  text-decoration: underline !important;
 }

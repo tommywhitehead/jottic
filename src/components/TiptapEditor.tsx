@@ -96,6 +96,26 @@ export function TiptapEditor({
     }
   }, []);
 
+  // Safe wrapper for updateContent that checks if mutation is ready
+  const safeUpdateContent = (newContent: string) => {
+    // Only attempt mutation if we have content (storage is loaded)
+    if (content === undefined) {
+      return;
+    }
+    
+    try {
+      updateContent(newContent);
+    } catch (error) {
+      // Silently ignore storage not loaded errors
+      if (!error.message?.includes('storage has been loaded')) {
+        console.error('Failed to update Liveblocks content:', error);
+      }
+    }
+  };
+
+  // Check if storage is loaded
+  const isStorageLoaded = content !== undefined;
+
   // Liveblocks extension for collaboration
   const liveblocks = useLiveblocksExtension({
     // Disable mention functionality completely
@@ -131,9 +151,9 @@ export function TiptapEditor({
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
       
-      // Only update content if storage is available
-      if (content !== undefined) {
-        updateContent(html);
+      // Only update content if storage is loaded
+      if (isStorageLoaded) {
+        safeUpdateContent(html);
       }
       
       // Notify parent about typing state
@@ -158,26 +178,37 @@ export function TiptapEditor({
         class: 'tiptap-editor',
         'data-placeholder': 'Start typing...',
       },
+      handleKeyDown: (view, event) => {
+        // Handle Tab key to insert tab character
+        if (event.key === 'Tab') {
+          event.preventDefault();
+          const { state, dispatch } = view;
+          const { tr } = state;
+          const insertPos = state.selection.from;
+          tr.insertText('\t', insertPos, insertPos);
+          dispatch(tr);
+          return true;
+        }
+        return false;
+      },
     },
   });
 
   // Initialize content from Supabase to Liveblocks storage when document changes
   useEffect(() => {
-    // Only initialize once per document title
-    if (initialContent !== undefined && initializedRef.current !== documentTitle) {
+    // Only initialize once per document title and when storage is loaded
+    if (initialContent !== undefined && initializedRef.current !== documentTitle && isStorageLoaded) {
       const timer = setTimeout(() => {
-        try {
-          updateContent(initialContent);
+        // Double-check that storage is still loaded before calling mutation
+        if (content !== undefined) {
+          safeUpdateContent(initialContent);
           initializedRef.current = documentTitle;
-        } catch (error) {
-          console.error('Failed to initialize Liveblocks content:', error);
-          if (onError) onError();
         }
-      }, 100);
+      }, 200); // Increased delay to give storage more time to load
       
       return () => clearTimeout(timer);
     }
-  }, [documentTitle, initialContent, updateContent, onError]);
+  }, [documentTitle, initialContent, onError, isStorageLoaded, content]);
 
 
   // Focus editor on mount

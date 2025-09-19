@@ -5,6 +5,8 @@ import { AuthenticatedRoomProvider } from './AuthenticatedRoomProvider';
 import { TiptapEditor } from './TiptapEditor';
 import { useNotes } from '../hooks/useNotes';
 import { useActivePane } from '../hooks/useActivePane';
+import { useAuth } from '../contexts/AuthContext';
+import { LoginButton } from './LoginButton';
 import svgPaths from '../imports/svg-4qeuqv3u0r';
 
 interface SplitScreenEditorProps {
@@ -81,12 +83,19 @@ function JotticLogo() {
 }
 
 function Header() {
+  const { user } = useAuth();
+  
   return (
     <div className="header">
       <JotticLogo />
       <div className="header-nav">
         <span className="header-link">dark</span>
-        <span className="header-link">login</span>
+        <LoginButton />
+        {user && (
+          <span className="header-link user-display">
+            {user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'}
+          </span>
+        )}
       </div>
     </div>
   );

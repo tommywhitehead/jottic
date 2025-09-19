@@ -55,8 +55,14 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
 }
 
 function JotticLogo() {
+  const navigate = useNavigate();
+  
+  const handleLogoClick = () => {
+    navigate('/');
+  };
+  
   return (
-    <div className="logo" data-name="Jottic">
+    <div className="logo" data-name="Jottic" onClick={handleLogoClick} style={{ cursor: 'pointer' }}>
       <svg className="logo-svg" fill="none" preserveAspectRatio="none" viewBox="0 0 50 13">
         <g id="Jottic">
           <path d={svgPaths.p1c133f80} fill="var(--fill-0, #464646)" id="Vector" />
@@ -82,7 +88,7 @@ function Header() {
         <span className="header-link">dark</span>
         <LoginButton />
         {user && (
-          <span className="header-link" style={{ fontSize: '12px', opacity: 0.7 }}>
+          <span className="header-link user-display">
             {user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'}
           </span>
         )}

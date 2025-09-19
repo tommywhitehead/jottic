@@ -33,11 +33,20 @@ export function useNotes(title: string) {
         .from('notes')
         .select('*')
         .eq('title', title)
-        .single()
+        .maybeSingle() // Use maybeSingle instead of single to avoid errors when no record found
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
+      if (error) {
         console.error('Supabase query error:', error);
-        throw error
+        // Handle specific error codes
+        if (error.code === 'PGRST116') {
+          // No record found - this is expected for new notes
+          console.log('No existing note found for title:', title);
+        } else if (error.status === 406) {
+          console.error('406 Not Acceptable - possible RLS policy issue');
+          setError('Access denied - check authentication');
+        } else {
+          throw error;
+        }
       }
 
       setNote(data || null)
