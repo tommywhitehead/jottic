@@ -59,6 +59,9 @@ export function TiptapEditor({
 }: TiptapEditorProps) {
   const content = useStorage((root) => root?.content || '');
   
+  // Debug: Log what content we're getting
+  console.log('TiptapEditor props:', { documentTitle, initialContent, liveblocksContent: content });
+  
   // Track if we've initialized content for this document
   const initializedRef = useRef<string | null>(null);
   
@@ -147,7 +150,7 @@ export function TiptapEditor({
         onLinkCreated: goToNote,
       }),
     ],
-    content: initialContent || '', // Use initialContent directly
+    content: initialContent || '', // Use initialContent directly, not Liveblocks content
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
       

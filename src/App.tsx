@@ -123,6 +123,9 @@ function AppContent() {
   
   // Use the notes hook for Supabase integration
   const { note, loading, saving, error, saveNote } = useNotes(documentTitle);
+  
+  // Debug: Log what note content we're getting
+  console.log('App note data:', { documentTitle, note: note?.content, noteExists: !!note });
 
 
 
