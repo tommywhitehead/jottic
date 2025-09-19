@@ -15,7 +15,9 @@ import { AuthCallback } from './components/AuthCallback';
 import { AuthenticatedRoomProvider } from './components/AuthenticatedRoomProvider';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { LogoutDebug } from './components/LogoutDebug';
+import { JotticLogo } from './components/JotticLogo';
 import { useOthers } from './lib/liveblocks';
+import { supabase } from './lib/supabase';
 import { generateRandomId } from './lib/randomId';
 import './App.css';
 
@@ -58,28 +60,6 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
   }
 }
 
-function JotticLogo() {
-  const navigate = useNavigate();
-  
-  const handleLogoClick = () => {
-    navigate('/');
-  };
-  
-  return (
-    <div className="logo" data-name="Jottic" onClick={handleLogoClick} style={{ cursor: 'pointer' }}>
-      <svg className="logo-svg" fill="none" preserveAspectRatio="none" viewBox="0 0 50 13">
-        <g id="Jottic">
-          <path d={svgPaths.p1c133f80} fill="var(--fill-0, #464646)" id="Vector" />
-          <path d={svgPaths.p16897f80} fill="var(--fill-0, #464646)" id="Vector_2" />
-          <path d={svgPaths.p7476d00} fill="var(--fill-0, #464646)" id="Vector_3" />
-          <path d={svgPaths.p1ac03e00} fill="var(--fill-0, #464646)" id="Vector_4" />
-          <path d={svgPaths.p2eac9c00} fill="var(--fill-0, #464646)" id="Vector_5" />
-          <path d={svgPaths.p7638900} fill="var(--fill-0, #464646)" id="Vector_6" />
-        </g>
-      </svg>
-    </div>
-  );
-}
 
 
 function Header() {
@@ -123,14 +103,8 @@ function AppContent() {
   const roomId = `document-${documentTitle}`;
   
   // Use the notes hook for Supabase integration
-  const { note, loading, saving, error, saveNote } = useNotes(documentTitle);
+  const { note, loading, saving, error, saveNote, flushPendingSave } = useNotes(documentTitle);
   
-  // Debug: Log what note content we're getting
-  console.log('App note data:', { documentTitle, note: note?.content, noteExists: !!note });
-
-
-
-
   // Handle navigation state and page load delay
   useEffect(() => {
     setIsNavigating(true);
@@ -199,11 +173,41 @@ function AppContent() {
           onSave={saveNote}
           initialContent={note?.content || ''}
           onTypingChange={setIsTyping}
+          onBeforeNavigate={flushPendingSave}
         />
         </div>
       </div>
     </div>
   );
+}
+
+async function generateUnusedNoteId(maxAttempts = 5): Promise<string> {
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const candidate = generateRandomId();
+
+    try {
+      const { data, error } = await supabase
+        .from('notes')
+        .select('id')
+        .eq('title', candidate)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Failed to verify note availability:', error);
+        break;
+      }
+
+      if (!data) {
+        return candidate;
+      }
+    } catch (error) {
+      console.error('Error generating unique note id:', error);
+      break;
+    }
+  }
+
+  const fallbackSuffix = Date.now().toString(36).slice(-4);
+  return `${generateRandomId()}-${fallbackSuffix}`;
 }
 
 function AppWithAuth() {
@@ -214,10 +218,20 @@ function AppWithAuth() {
   useEffect(() => {
     const path = location.pathname;
     if (path === '/' || path === '') {
-      // Generate a new random ID and redirect to it
-      const randomId = generateRandomId();
-      navigate(`/${randomId}`, { replace: true });
-      return;
+      let cancelled = false;
+
+      const redirectToNewNote = async () => {
+        const noteId = await generateUnusedNoteId();
+        if (!cancelled) {
+          navigate(`/${noteId}`, { replace: true });
+        }
+      };
+
+      redirectToNewNote();
+
+      return () => {
+        cancelled = true;
+      };
     }
   }, [location.pathname, navigate]);
   
@@ -258,6 +272,29 @@ function AppWithAuth() {
   
   const documentTitle = getDocumentTitle();
   const roomId = `document-${documentTitle}`;
+
+  // If we're at the root path, render a lightweight placeholder without
+  // mounting any editor or Liveblocks room to avoid connecting to a stale
+  // temporary room (e.g., `document-`). The effect above will navigate to
+  // a fresh, unused note id immediately.
+  if (location.pathname === '/' || location.pathname === '') {
+    return (
+      <ErrorBoundary>
+        <div className="app">
+          <div className="header-fade">
+            <Header />
+          </div>
+          <div className="main-layout">
+            <div className="editor-container">
+              <div className="status-container">
+                <span className="status-indicator loading">loading...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ErrorBoundary>
+    );
+  }
 
   // Render multi-pane if URL has 2-10 segments
   if (isMultiPane()) {

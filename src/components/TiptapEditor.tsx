@@ -1,44 +1,10 @@
-import React, { useEffect, useCallback, useState, useRef } from 'react';
+import React, { useEffect, useCallback, useRef } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import { useLiveblocksExtension } from '@liveblocks/react-tiptap';
 import StarterKit from '@tiptap/starter-kit';
-import { Document } from '@tiptap/extension-document';
-import { Paragraph } from '@tiptap/extension-paragraph';
-import { Text } from '@tiptap/extension-text';
-import { HardBreak } from '@tiptap/extension-hard-break';
-import { useStorage, useMutation, useMyPresence, useUpdateMyPresence, useOthers } from '../lib/liveblocks';
+import { useStorage, useMutation, useMyPresence, useOthers } from '../lib/liveblocks';
 import { NoteLinkExtension } from './NoteLinkExtension';
 import { useNoteNavigation } from '../lib/noteNavigation';
-
-// Helper function to convert hex color to hue rotation
-function getHueFromColor(hexColor: string): number {
-  // Remove # if present
-  const hex = hexColor.replace('#', '');
-  
-  // Convert hex to RGB
-  const r = parseInt(hex.substr(0, 2), 16) / 255;
-  const g = parseInt(hex.substr(2, 2), 16) / 255;
-  const b = parseInt(hex.substr(4, 2), 16) / 255;
-  
-  // Convert RGB to HSL
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  let h = 0;
-  
-  if (max === min) {
-    h = 0; // achromatic
-  } else {
-    const d = max - min;
-    switch (max) {
-      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-      case g: h = (b - r) / d + 2; break;
-      case b: h = (r - g) / d + 4; break;
-    }
-    h /= 6;
-  }
-  
-  return Math.round(h * 360);
-}
 
 interface TiptapEditorProps {
   documentTitle: string;
@@ -47,6 +13,7 @@ interface TiptapEditorProps {
   onTypingChange?: (isTyping: boolean) => void;
   onError?: () => void;
   onUserCountChange?: (count: number) => void;
+  onBeforeNavigate?: () => Promise<void> | void;
 }
 
 export function TiptapEditor({ 
@@ -55,15 +22,14 @@ export function TiptapEditor({
   initialContent = '', 
   onTypingChange,
   onError,
-  onUserCountChange
+  onUserCountChange,
+  onBeforeNavigate
 }: TiptapEditorProps) {
-  const content = useStorage((root) => root?.content || '');
-  
-  // Debug: Log what content we're getting
-  console.log('TiptapEditor props:', { documentTitle, initialContent, liveblocksContent: content });
+  const content = useStorage((root) => root?.content);
   
   // Track if we've initialized content for this document
   const initializedRef = useRef<string | null>(null);
+  const firstUpdateSkippedRef = useRef<boolean>(false);
   
   // Cursor and presence management
   const [myPresence, updateMyPresence] = useMyPresence();
@@ -71,6 +37,21 @@ export function TiptapEditor({
   
   // Note navigation functionality
   const { goToNote } = useNoteNavigation();
+
+  const handleNavigateToNoteRef = useRef(onBeforeNavigate);
+
+  useEffect(() => {
+    handleNavigateToNoteRef.current = onBeforeNavigate;
+  }, [onBeforeNavigate]);
+
+  const navigateToNote = useCallback((noteName: string) => {
+    // Defer navigation beyond current render of any sibling editors
+    setTimeout(() => {
+      Promise.resolve(handleNavigateToNoteRef.current?.()).finally(() => {
+        goToNote(noteName);
+      });
+    }, 0);
+  }, [goToNote]);
 
   // Set initial user information in presence (only once)
   useEffect(() => {
@@ -85,12 +66,6 @@ export function TiptapEditor({
     }
   }, []); // Empty dependency array to run only once
 
-  // Debug: Log user colors
-  useEffect(() => {
-    console.log('My presence:', myPresence);
-    console.log('Others:', others.map(o => ({ name: o.presence?.user?.name, color: o.presence?.user?.color })));
-  }, [myPresence, others]);
-  
   // Mutation to update content - only call when storage is loaded
   const updateContent = useMutation(({ storage }, newContent: string) => {
     if (storage) {
@@ -99,25 +74,41 @@ export function TiptapEditor({
     }
   }, []);
 
-  // Safe wrapper for updateContent that checks if mutation is ready
-  const safeUpdateContent = (newContent: string) => {
-    // Only attempt mutation if we have content (storage is loaded)
-    if (content === undefined) {
+  const isStorageLoaded = content !== undefined;
+
+  const safeUpdateContent = useCallback((newContent: string) => {
+    if (!isStorageLoaded) {
       return;
     }
-    
+
+    if (typeof content === 'string' && content === newContent) {
+      return;
+    }
+
     try {
       updateContent(newContent);
     } catch (error) {
-      // Silently ignore storage not loaded errors
-      if (!error.message?.includes('storage has been loaded')) {
+      if (!(error instanceof Error) || !error.message?.includes('storage has been loaded')) {
         console.error('Failed to update Liveblocks content:', error);
       }
     }
-  };
+  }, [content, isStorageLoaded, updateContent]);
 
-  // Check if storage is loaded
-  const isStorageLoaded = content !== undefined;
+  const normalizeContent = useCallback((value?: string) => {
+    if (!value) return '';
+    return value;
+  }, []);
+
+  const hasMeaningfulContent = useCallback((value?: string) => {
+    if (!value) return false;
+    const text = value
+      .replace(/<p><\/p>/g, '')
+      .replace(/<br\s*\/?>(\s*<br\s*\/?>)*/g, '')
+      .replace(/\s+/g, '')
+      .replace(/<[^>]*>/g, '')
+      .trim();
+    return text.length > 0;
+  }, []);
 
   // Liveblocks extension for collaboration
   const liveblocks = useLiveblocksExtension({
@@ -147,34 +138,59 @@ export function TiptapEditor({
       }),
       // Add note link extension with auto-navigation
       NoteLinkExtension.configure({
-        onLinkCreated: goToNote,
+        onLinkCreated: navigateToNote,
       }),
-    ],
-    content: initialContent || '', // Use initialContent directly, not Liveblocks content
+  ],
+    // Initialize with empty content. Liveblocks storage is the source of truth
+    // and will hydrate the editor once loaded. We bootstrap storage separately
+    // from Supabase or local draft when needed.
+    content: '',
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
       
-      // Only update content if storage is loaded
+      // Only update content if storage is loaded. Defer the mutation to avoid
+      // triggering state updates while sibling panes are mounting.
       if (isStorageLoaded) {
-        safeUpdateContent(html);
+        setTimeout(() => safeUpdateContent(html), 0);
       }
       
       // Notify parent about typing state
       if (onTypingChange) {
-        onTypingChange(html.length > 0);
+        // Skip the very first onUpdate triggered by initial mount to avoid
+        // setState during render warnings and incorrect typing state
+        if (!firstUpdateSkippedRef.current) {
+          firstUpdateSkippedRef.current = true;
+        } else {
+          // Defer to the macrotask queue to ensure we're past any concurrent
+          // React renders of sibling editors when adding panes
+          setTimeout(() => onTypingChange(html.length > 0), 0);
+        }
       }
       
       // Call the onSave callback for Supabase integration
       if (onSave) {
-        onSave(html);
+        // Defer save signal to avoid triggering state updates in hooks while
+        // a sibling editor is mounting
+        setTimeout(() => onSave(html), 0);
+      }
+
+      // Persist a local draft so rapid navigations (e.g., switching to multi-pane)
+      // don't lose unsaved content due to race conditions with network saves
+      try {
+        const draftKey = `draft-${documentTitle}`;
+        window.sessionStorage.setItem(draftKey, html);
+      } catch (_) {
+        // Ignore storage errors
       }
     },
     onSelectionUpdate: ({ editor }) => {
-      // Handle selection changes for collaboration
+      // Handle selection changes for collaboration (deferred)
       const { from, to } = editor.state.selection;
-      updateMyPresence({
-        selection: { anchor: from, focus: to }
-      });
+      setTimeout(() => {
+        updateMyPresence({
+          selection: { anchor: from, focus: to }
+        });
+      }, 0);
     },
     editorProps: {
       attributes: {
@@ -195,25 +211,39 @@ export function TiptapEditor({
         return false;
       },
     },
-  }, [documentTitle]); // Force recreation only when document changes
+  }, [documentTitle, navigateToNote]); // Force recreation only when document changes
 
-  // Initialize content from Supabase to Liveblocks storage when document changes
   useEffect(() => {
-    // Only initialize once per document title and when storage is loaded
-    if (initialContent !== undefined && initializedRef.current !== documentTitle && isStorageLoaded) {
-      const timer = setTimeout(() => {
-        // Double-check that storage is still loaded before calling mutation
-        if (content !== undefined) {
-          // Always use initialContent from Supabase for consistency
-          // This ensures new notes start blank and existing notes load their saved content
-          safeUpdateContent(initialContent);
-          initializedRef.current = documentTitle;
-        }
-      }, 200); // Increased delay to give storage more time to load
-      
-      return () => clearTimeout(timer);
+    if (!isStorageLoaded || initializedRef.current === documentTitle) {
+      return;
     }
-  }, [documentTitle, initialContent, onError, isStorageLoaded, content]);
+
+    const liveblocksContent = typeof content === 'string' ? content : '';
+    const normalizedInitial = normalizeContent(initialContent);
+    const shouldBootstrapFromSupabase = hasMeaningfulContent(normalizedInitial) && liveblocksContent !== normalizedInitial;
+
+    if (shouldBootstrapFromSupabase) {
+      safeUpdateContent(normalizedInitial);
+    }
+
+    if (!hasMeaningfulContent(normalizedInitial) && !hasMeaningfulContent(liveblocksContent)) {
+      // Attempt to recover any local draft if both sources are empty
+      try {
+        const draftKey = `draft-${documentTitle}`;
+        const draft = window.sessionStorage.getItem(draftKey) || '';
+        if (hasMeaningfulContent(draft)) {
+          // Only update storage; Liveblocks will hydrate the editor
+          safeUpdateContent(draft);
+        } else {
+          safeUpdateContent('');
+        }
+      } catch (_) {
+        safeUpdateContent('');
+      }
+    }
+
+    initializedRef.current = documentTitle;
+  }, [documentTitle, initialContent, isStorageLoaded, content, safeUpdateContent, normalizeContent, hasMeaningfulContent]);
 
   // Focus editor on mount
   useEffect(() => {
@@ -232,7 +262,8 @@ export function TiptapEditor({
         
         const noteName = target.getAttribute('data-note-name');
         if (noteName) {
-          goToNote(noteName);
+          // Defer navigation triggered by click as well
+          setTimeout(() => goToNote(noteName), 0);
         }
       }
     };

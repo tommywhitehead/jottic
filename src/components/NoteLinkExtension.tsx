@@ -11,7 +11,7 @@ export const NoteLinkExtension = Extension.create({
 
   addOptions() {
     return {
-      onLinkCreated: null as ((noteName: string) => void) | null,
+      onLinkCreated: null as ((noteName: string) => void | Promise<void>) | null,
     };
   },
 
@@ -74,8 +74,13 @@ export const NoteLinkExtension = Extension.create({
             if (onLinkCreated && hasUserInteracted) {
               currentLinks.forEach(noteName => {
                 if (!previousLinks.has(noteName)) {
-                  // This is a new link created by user typing, trigger navigation
-                  setTimeout(() => onLinkCreated(noteName), 0);
+                  // Defer navigation so we don't update React state while
+                  // ProseMirror is computing decorations during React render
+                  setTimeout(() => {
+                    Promise.resolve(onLinkCreated(noteName)).catch((error) => {
+                      console.error('Failed to handle note link navigation', error);
+                    });
+                  }, 0);
                 }
               });
             }
@@ -95,4 +100,3 @@ export const NoteLinkExtension = Extension.create({
     ];
   },
 });
-

@@ -1,14 +1,21 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase, Note } from '../lib/supabase'
 
+interface NoteState {
+  title: string
+  value: Note | null
+}
+
 export function useNotes(title: string) {
-  const [note, setNote] = useState<Note | null>(null)
+  const [noteState, setNoteState] = useState<NoteState>({ title, value: null })
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const isMountedRef = useRef(true)
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const latestContentRef = useRef<string | null>(null)
 
-  // Debug: Track hook usage
-  console.log('useNotes hook called for title:', title);
+  const note = noteState.title === title ? noteState.value : null
 
   // Load note by title
   const loadNote = useCallback(async () => {
@@ -22,12 +29,12 @@ export function useNotes(title: string) {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError || !session) {
-        console.error('No valid Supabase session for notes query:', sessionError);
-        setError('Not authenticated');
+        if (isMountedRef.current) {
+          console.error('No valid Supabase session for notes query:', sessionError);
+          setError('Not authenticated');
+        }
         return;
       }
-
-      console.log('Making Supabase query for title:', title, 'with session:', !!session);
       
       const { data, error } = await supabase
         .from('notes')
@@ -40,21 +47,27 @@ export function useNotes(title: string) {
         // Handle specific error codes
         if (error.code === 'PGRST116') {
           // No record found - this is expected for new notes
-          console.log('No existing note found for title:', title);
         } else if (error.status === 406) {
           console.error('406 Not Acceptable - possible RLS policy issue');
-          setError('Access denied - check authentication');
+          if (isMountedRef.current) {
+            setError('Access denied - check authentication');
+          }
         } else {
           throw error;
         }
       }
-
-      setNote(data || null)
+      if (isMountedRef.current) {
+        setNoteState({ title, value: data || null })
+      }
     } catch (err) {
       console.error('Notes query failed:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load note')
+      if (isMountedRef.current) {
+        setError(err instanceof Error ? err.message : 'Failed to load note')
+      }
     } finally {
-      setLoading(false)
+      if (isMountedRef.current) {
+        setLoading(false)
+      }
     }
   }, [title])
 
@@ -62,8 +75,10 @@ export function useNotes(title: string) {
   const saveNote = useCallback(async (content: string) => {
     if (!title || title === 'home') return
 
-    setSaving(true)
-    setError(null)
+    if (isMountedRef.current) {
+      setSaving(true)
+      setError(null)
+    }
 
     try {
       // Ensure we have a valid session before making the request
@@ -71,7 +86,9 @@ export function useNotes(title: string) {
       
       if (sessionError || !session) {
         console.error('No valid Supabase session for notes save:', sessionError);
-        setError('Not authenticated');
+        if (isMountedRef.current) {
+          setError('Not authenticated');
+        }
         return;
       }
 
@@ -80,7 +97,7 @@ export function useNotes(title: string) {
         .from('notes')
         .select('*')
         .eq('title', title)
-        .single()
+        .maybeSingle()
 
       if (fetchError && fetchError.code !== 'PGRST116') {
         console.error('Error checking for existing note:', fetchError);
@@ -89,7 +106,6 @@ export function useNotes(title: string) {
 
       if (existingNote) {
         // Update existing note
-        console.log('Updating existing note:', existingNote.id);
         const { data, error } = await supabase
           .from('notes')
           .update({ content, updated_at: new Date().toISOString() })
@@ -101,10 +117,11 @@ export function useNotes(title: string) {
           console.error('Supabase update error:', error);
           throw error
         }
-        setNote(data)
+        if (isMountedRef.current) {
+          setNoteState({ title, value: data })
+        }
       } else {
         // Create new note
-        console.log('Creating new note for title:', title);
         const { data, error } = await supabase
           .from('notes')
           .insert({ title, content })
@@ -115,44 +132,82 @@ export function useNotes(title: string) {
           console.error('Supabase insert error:', error);
           throw error
         }
-        setNote(data)
+        if (isMountedRef.current) {
+          setNoteState({ title, value: data })
+        }
       }
     } catch (err) {
       console.error('Notes save failed:', err);
-      setError(err instanceof Error ? err.message : 'Failed to save note')
+      if (isMountedRef.current) {
+        setError(err instanceof Error ? err.message : 'Failed to save note')
+      }
     } finally {
-      setSaving(false)
-    }
-  }, [title, note])
-
-  // Auto-save with debouncing
-  const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null)
-
-  const debouncedSave = useCallback((content: string) => {
-    if (saveTimeout) {
-      clearTimeout(saveTimeout)
-    }
-
-    const timeout = setTimeout(() => {
-      saveNote(content)
-    }, 1000) // Save after 1 second of inactivity
-
-    setSaveTimeout(timeout)
-  }, [saveNote, saveTimeout])
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (saveTimeout) {
-        clearTimeout(saveTimeout)
+      if (isMountedRef.current) {
+        setSaving(false)
       }
     }
-  }, [saveTimeout])
+  }, [title])
+
+  const flushPendingSave = useCallback(async () => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current)
+      saveTimeoutRef.current = null
+    }
+
+    const pendingContent = latestContentRef.current
+    latestContentRef.current = null
+
+    if (pendingContent !== null) {
+      try {
+        await saveNote(pendingContent)
+      } catch (error) {
+        console.error('Failed to flush pending note save:', error)
+      }
+    }
+  }, [saveNote])
+
+  const debouncedSave = useCallback((content: string) => {
+    latestContentRef.current = content
+
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current)
+    }
+
+    saveTimeoutRef.current = setTimeout(() => {
+      saveTimeoutRef.current = null
+      const pendingContent = latestContentRef.current
+      latestContentRef.current = null
+      if (pendingContent !== null) {
+        void saveNote(pendingContent)
+      }
+    }, 1000)
+  }, [saveNote])
 
   // Load note when title changes
   useEffect(() => {
     loadNote()
   }, [loadNote])
+
+  useEffect(() => {
+    return () => {
+      void flushPendingSave()
+    }
+  }, [flushPendingSave, title])
+
+  useEffect(() => {
+    if (noteState.title !== title) {
+      setNoteState({ title, value: null })
+    }
+    setError(null)
+    latestContentRef.current = null
+  }, [title])
+
+  useEffect(() => () => {
+    isMountedRef.current = false
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current)
+    }
+  }, [])
 
   return {
     note,
@@ -160,6 +215,7 @@ export function useNotes(title: string) {
     saving,
     error,
     saveNote: debouncedSave,
+    flushPendingSave,
     loadNote
   }
 }

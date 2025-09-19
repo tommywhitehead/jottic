@@ -1,3 +1,4 @@
+import { useCallback, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 // Utility function to get current note titles from URL
@@ -48,17 +49,19 @@ export function navigateToNote(noteName: string, navigate: (path: string) => voi
 export function useNoteNavigation() {
   const navigate = useNavigate();
   const location = useLocation();
-  
-  const currentNotes = getCurrentNoteTitles(location);
-  
-  const goToNote = (noteName: string) => {
-    navigateToNote(noteName, navigate, location);
-  };
-  
-  const noteExists = (noteName: string) => {
-    return noteExistsInUrl(noteName, location);
-  };
-  
+
+  const pathname = location.pathname;
+
+  const currentNotes = useMemo(() => getCurrentNoteTitles({ pathname }), [pathname]);
+
+  const goToNote = useCallback((noteName: string) => {
+    navigateToNote(noteName, navigate, { pathname });
+  }, [navigate, pathname]);
+
+  const noteExists = useCallback((noteName: string) => {
+    return noteExistsInUrl(noteName, { pathname });
+  }, [pathname]);
+
   return {
     currentNotes,
     goToNote,

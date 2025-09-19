@@ -6,7 +6,7 @@ import { TiptapEditor } from './TiptapEditor';
 import { useNotes } from '../hooks/useNotes';
 import { useAuth } from '../contexts/AuthContext';
 import { LoginButton } from './LoginButton';
-import svgPaths from '../imports/svg-4qeuqv3u0r';
+import { JotticLogo } from './JotticLogo';
 
 interface MultiPaneEditorProps {
   noteTitles: string[];
@@ -27,7 +27,7 @@ function PaneWithUserCount({
   onClose: () => void;
 }) {
   const others = useOthers();
-  const { note, saveNote } = useNotes(noteTitle);
+  const { note, saveNote, flushPendingSave } = useNotes(noteTitle);
   
   return (
     <div className="editor-container">
@@ -54,28 +54,13 @@ function PaneWithUserCount({
         documentTitle={noteTitle}
         onSave={noteTitle !== 'home' ? saveNote : undefined}
         initialContent={note?.content || ''}
+        onBeforeNavigate={flushPendingSave}
         onTypingChange={onTypingChange}
       />
     </div>
   );
 }
 
-function JotticLogo() {
-  return (
-    <div className="logo" data-name="Jottic">
-      <svg className="logo-svg" fill="none" preserveAspectRatio="none" viewBox="0 0 50 13">
-        <g id="Jottic">
-          <path d={svgPaths.p1c133f80} fill="var(--fill-0, #464646)" id="Vector" />
-          <path d={svgPaths.p16897f80} fill="var(--fill-0, #464646)" id="Vector_2" />
-          <path d={svgPaths.p7476d00} fill="var(--fill-0, #464646)" id="Vector_3" />
-          <path d={svgPaths.p1ac03e00} fill="var(--fill-0, #464646)" id="Vector_4" />
-          <path d={svgPaths.p2eac9c00} fill="var(--fill-0, #464646)" id="Vector_5" />
-          <path d={svgPaths.p7638900} fill="var(--fill-0, #464646)" id="Vector_6" />
-        </g>
-      </svg>
-    </div>
-  );
-}
 
 function Header({ noteCount }: { noteCount: number }) {
   const { user } = useAuth();

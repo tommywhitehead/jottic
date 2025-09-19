@@ -7,7 +7,7 @@ import { useNotes } from '../hooks/useNotes';
 import { useActivePane } from '../hooks/useActivePane';
 import { useAuth } from '../contexts/AuthContext';
 import { LoginButton } from './LoginButton';
-import svgPaths from '../imports/svg-4qeuqv3u0r';
+import { JotticLogo } from './JotticLogo';
 
 interface SplitScreenEditorProps {
   leftNoteTitle: string;
@@ -19,6 +19,7 @@ function PaneWithUserCount({
   noteTitle, 
   note, 
   onSave, 
+  onBeforeNavigate,
   onTypingChange,
   isTyping,
   isPageLoaded,
@@ -27,6 +28,7 @@ function PaneWithUserCount({
   noteTitle: string;
   note: any;
   onSave?: (content: string) => void;
+  onBeforeNavigate?: () => Promise<void> | void;
   onTypingChange?: (isTyping: boolean) => void;
   isTyping: boolean;
   isPageLoaded: boolean;
@@ -59,28 +61,13 @@ function PaneWithUserCount({
         documentTitle={noteTitle}
         onSave={onSave}
         initialContent={note?.content || ''}
+        onBeforeNavigate={onBeforeNavigate}
         onTypingChange={onTypingChange}
       />
     </div>
   );
 }
 
-function JotticLogo() {
-  return (
-    <div className="logo" data-name="Jottic">
-      <svg className="logo-svg" fill="none" preserveAspectRatio="none" viewBox="0 0 50 13">
-        <g id="Jottic">
-          <path d={svgPaths.p1c133f80} fill="var(--fill-0, #464646)" id="Vector" />
-          <path d={svgPaths.p16897f80} fill="var(--fill-0, #464646)" id="Vector_2" />
-          <path d={svgPaths.p7476d00} fill="var(--fill-0, #464646)" id="Vector_3" />
-          <path d={svgPaths.p1ac03e00} fill="var(--fill-0, #464646)" id="Vector_4" />
-          <path d={svgPaths.p2eac9c00} fill="var(--fill-0, #464646)" id="Vector_5" />
-          <path d={svgPaths.p7638900} fill="var(--fill-0, #464646)" id="Vector_6" />
-        </g>
-      </svg>
-    </div>
-  );
-}
 
 function Header() {
   const { user } = useAuth();
@@ -201,6 +188,7 @@ export function SplitScreenEditor({ leftNoteTitle, rightNoteTitle }: SplitScreen
                 noteTitle={leftNoteTitle}
                 note={leftNote.note}
                 onSave={leftNoteTitle !== 'home' ? leftNote.saveNote : undefined}
+                onBeforeNavigate={leftNote.flushPendingSave}
                 onTypingChange={setIsTyping}
                 isTyping={isTyping}
                 isPageLoaded={isPageLoaded}
@@ -230,6 +218,7 @@ export function SplitScreenEditor({ leftNoteTitle, rightNoteTitle }: SplitScreen
                 noteTitle={rightNoteTitle}
                 note={rightNote.note}
                 onSave={rightNoteTitle !== 'home' ? rightNote.saveNote : undefined}
+                onBeforeNavigate={rightNote.flushPendingSave}
                 onTypingChange={setIsTyping}
                 isTyping={isTyping}
                 isPageLoaded={isPageLoaded}
