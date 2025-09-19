@@ -147,7 +147,7 @@ export function TiptapEditor({
         onLinkCreated: goToNote,
       }),
     ],
-    content: content || '', // Use Liveblocks content only
+    content: initialContent || '', // Use initialContent directly
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
       
@@ -192,7 +192,7 @@ export function TiptapEditor({
         return false;
       },
     },
-  });
+  }, [documentTitle]); // Force recreation only when document changes
 
   // Initialize content from Supabase to Liveblocks storage when document changes
   useEffect(() => {
@@ -201,6 +201,8 @@ export function TiptapEditor({
       const timer = setTimeout(() => {
         // Double-check that storage is still loaded before calling mutation
         if (content !== undefined) {
+          // Always use initialContent from Supabase for consistency
+          // This ensures new notes start blank and existing notes load their saved content
           safeUpdateContent(initialContent);
           initializedRef.current = documentTitle;
         }
@@ -209,7 +211,6 @@ export function TiptapEditor({
       return () => clearTimeout(timer);
     }
   }, [documentTitle, initialContent, onError, isStorageLoaded, content]);
-
 
   // Focus editor on mount
   useEffect(() => {

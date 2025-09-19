@@ -58,7 +58,9 @@
   transition: text-decoration 0.2s ease;
 }
 
-.header-link:hover {
+/* Clickable header links get hover underline */
+.header-link[onclick]:hover,
+.header-link[style*="cursor: pointer"]:hover {
   text-decoration: underline;
 }
 
