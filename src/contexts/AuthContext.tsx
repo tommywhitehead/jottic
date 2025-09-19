@@ -65,9 +65,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Error signing out:', error);
+        throw error;
+      }
+      // Clear local state immediately
+      setUser(null);
+      setSession(null);
+    } catch (error) {
       console.error('Error signing out:', error);
+      throw error;
     }
   };
 

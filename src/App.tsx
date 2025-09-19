@@ -14,6 +14,7 @@ import { LogoutPage } from './components/LogoutPage';
 import { AuthCallback } from './components/AuthCallback';
 import { AuthenticatedRoomProvider } from './components/AuthenticatedRoomProvider';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { LogoutDebug } from './components/LogoutDebug';
 import { useOthers } from './lib/liveblocks';
 import { generateRandomId } from './lib/randomId';
 import './App.css';
@@ -309,6 +310,7 @@ function AppWithAuth() {
 export default function App() {
   return (
     <AuthProvider>
+      <LogoutDebug />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/logout" element={<LogoutPage />} />

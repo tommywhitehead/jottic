@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -7,8 +7,33 @@ interface LoginButtonProps {
 }
 
 export function LoginButton({ className = '' }: LoginButtonProps) {
-  const { user, loading } = useAuth();
+  const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+      
+      // Clear any stored intended URL
+      sessionStorage.removeItem('intendedUrl');
+      localStorage.removeItem('intendedUrl');
+      
+      // Sign out from Supabase
+      await signOut();
+      
+      // Redirect to login page
+      navigate('/login', { replace: true });
+    } catch (error) {
+      console.error('Error during logout:', error);
+      // Even if logout fails, clear storage and redirect to login
+      sessionStorage.removeItem('intendedUrl');
+      localStorage.removeItem('intendedUrl');
+      navigate('/login', { replace: true });
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -22,10 +47,10 @@ export function LoginButton({ className = '' }: LoginButtonProps) {
     return (
       <span 
         className={`header-link ${className}`}
-        onClick={() => navigate('/logout')}
-        style={{ cursor: 'pointer' }}
+        onClick={handleLogout}
+        style={{ cursor: isLoggingOut ? 'not-allowed' : 'pointer' }}
       >
-        logout
+        {isLoggingOut ? 'logging out...' : 'logout'}
       </span>
     );
   }
