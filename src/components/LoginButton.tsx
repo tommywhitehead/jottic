@@ -7,7 +7,7 @@ interface LoginButtonProps {
 }
 
 export function LoginButton({ className = '' }: LoginButtonProps) {
-  const { user, loading, signOut } = useAuth();
+  const { user, loading, signOut, forceLogout } = useAuth();
   const navigate = useNavigate();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -22,14 +22,23 @@ export function LoginButton({ className = '' }: LoginButtonProps) {
       // Sign out from Supabase
       await signOut();
       
-      // Redirect to login page
-      navigate('/login', { replace: true });
+      // Use window.location as fallback for production
+      try {
+        navigate('/login', { replace: true });
+        // If navigate doesn't work, use window.location after a short delay
+        setTimeout(() => {
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login';
+          }
+        }, 100);
+      } catch (navError) {
+        console.error('Navigation error, using window.location:', navError);
+        window.location.href = '/login';
+      }
     } catch (error) {
       console.error('Error during logout:', error);
-      // Even if logout fails, clear storage and redirect to login
-      sessionStorage.removeItem('intendedUrl');
-      localStorage.removeItem('intendedUrl');
-      navigate('/login', { replace: true });
+      // Use forceLogout as ultimate fallback
+      forceLogout();
     } finally {
       setIsLoggingOut(false);
     }

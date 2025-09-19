@@ -22,14 +22,27 @@ export function LogoutPage() {
         // Force a small delay to ensure state is cleared
         await new Promise(resolve => setTimeout(resolve, 100));
         
-        // Redirect to login page
-        navigate('/login', { replace: true });
+        // Use window.location as fallback for production
+        try {
+          navigate('/login', { replace: true });
+          // If navigate doesn't work, use window.location after a short delay
+          setTimeout(() => {
+            if (window.location.pathname !== '/login') {
+              window.location.href = '/login';
+            }
+          }, 100);
+        } catch (navError) {
+          console.error('Navigation error, using window.location:', navError);
+          window.location.href = '/login';
+        }
       } catch (error) {
         console.error('Error during logout:', error);
         // Even if logout fails, clear storage and redirect to login
         sessionStorage.removeItem('intendedUrl');
         localStorage.removeItem('intendedUrl');
-        navigate('/login', { replace: true });
+        
+        // Force redirect using window.location
+        window.location.href = '/login';
       } finally {
         setIsLoggingOut(false);
       }

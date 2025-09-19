@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 export function LogoutDebug() {
-  const { user, session, loading } = useAuth();
+  const { user, session, loading, forceLogout } = useAuth();
   const [debugInfo, setDebugInfo] = useState<any>({});
 
   useEffect(() => {
@@ -41,6 +41,22 @@ export function LogoutDebug() {
       <div>Loading: {loading ? 'Yes' : 'No'}</div>
       <div>Session: {session ? 'Present' : 'None'}</div>
       <div>URL: {window.location.pathname}</div>
+      {user && (
+        <button 
+          onClick={forceLogout}
+          style={{
+            background: 'red',
+            color: 'white',
+            border: 'none',
+            padding: '5px 10px',
+            margin: '5px 0',
+            cursor: 'pointer',
+            fontSize: '10px'
+          }}
+        >
+          FORCE LOGOUT
+        </button>
+      )}
       <pre style={{ fontSize: '8px', margin: '5px 0 0 0' }}>
         {JSON.stringify(debugInfo, null, 2)}
       </pre>

@@ -8,6 +8,7 @@ interface AuthContextType {
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
+  forceLogout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -80,12 +81,30 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
+  const forceLogout = () => {
+    // Clear all storage
+    try {
+      sessionStorage.clear();
+      localStorage.clear();
+    } catch (e) {
+      console.error('Error clearing storage:', e);
+    }
+    
+    // Clear local state
+    setUser(null);
+    setSession(null);
+    
+    // Force redirect
+    window.location.href = '/login';
+  };
+
   const value = {
     user,
     session,
     loading,
     signInWithGoogle,
     signOut,
+    forceLogout,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
