@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 interface LoginButtonProps {
@@ -6,7 +7,8 @@ interface LoginButtonProps {
 }
 
 export function LoginButton({ className = '' }: LoginButtonProps) {
-  const { user, signInWithGoogle, signOut, loading } = useAuth();
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
 
   if (loading) {
     return (
@@ -20,7 +22,7 @@ export function LoginButton({ className = '' }: LoginButtonProps) {
     return (
       <span 
         className={`header-link ${className}`}
-        onClick={signOut}
+        onClick={() => navigate('/logout')}
         style={{ cursor: 'pointer' }}
       >
         logout
@@ -31,7 +33,7 @@ export function LoginButton({ className = '' }: LoginButtonProps) {
   return (
     <span 
       className={`header-link ${className}`}
-      onClick={signInWithGoogle}
+      onClick={() => navigate('/login')}
       style={{ cursor: 'pointer' }}
     >
       login

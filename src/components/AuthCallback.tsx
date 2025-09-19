@@ -1,35 +1,29 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 export function AuthCallback() {
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
 
   useEffect(() => {
-    const handleAuthCallback = async () => {
-      try {
-        const { data, error } = await supabase.auth.getSession();
-        if (error) {
-          console.error('Auth callback error:', error);
-          navigate('/');
-          return;
-        }
+    // Wait for auth state to be determined
+    if (loading) return;
 
-        if (data.session) {
-          // Successfully authenticated, redirect to home
-          navigate('/');
-        } else {
-          // No session, redirect to home
-          navigate('/');
-        }
-      } catch (error) {
-        console.error('Auth callback error:', error);
-        navigate('/');
+    if (user) {
+      // Successfully authenticated, redirect to intended URL or home
+      const intendedUrl = sessionStorage.getItem('intendedUrl');
+      if (intendedUrl) {
+        sessionStorage.removeItem('intendedUrl');
+        navigate(intendedUrl, { replace: true });
+      } else {
+        navigate('/', { replace: true });
       }
-    };
-
-    handleAuthCallback();
-  }, [navigate]);
+    } else {
+      // No session, redirect to login
+      navigate('/login');
+    }
+  }, [user, loading, navigate]);
 
   return (
     <div style={{ 
@@ -39,7 +33,7 @@ export function AuthCallback() {
       height: '100vh',
       fontFamily: 'monospace'
     }}>
-      <div>Completing authentication...</div>
+      <div>{loading ? 'Completing authentication...' : 'Redirecting...'}</div>
     </div>
   );
 }

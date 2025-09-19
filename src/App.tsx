@@ -9,8 +9,11 @@ import { SplitScreenEditor } from './components/SplitScreenEditor';
 import { MultiPaneEditor } from './components/MultiPaneEditor';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LoginButton } from './components/LoginButton';
+import { LoginPage } from './components/LoginPage';
+import { LogoutPage } from './components/LogoutPage';
 import { AuthCallback } from './components/AuthCallback';
 import { AuthenticatedRoomProvider } from './components/AuthenticatedRoomProvider';
+import { ProtectedRoute } from './components/ProtectedRoute';
 import { useOthers } from './lib/liveblocks';
 import { generateRandomId } from './lib/randomId';
 import './App.css';
@@ -304,8 +307,14 @@ export default function App() {
   return (
     <AuthProvider>
       <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/logout" element={<LogoutPage />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
-        <Route path="*" element={<AppWithAuth />} />
+        <Route path="*" element={
+          <ProtectedRoute>
+            <AppWithAuth />
+          </ProtectedRoute>
+        } />
       </Routes>
     </AuthProvider>
   );
