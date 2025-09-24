@@ -753,8 +753,8 @@ body.dark .prev-pane-btn {
   }
 
   .tiptap-editor {
-    font-size: 12px; /* avoid iOS zoom */
-    line-height: 1;
+    font-size: 16px; /* prevent iOS focus zoom */
+    line-height: 24px;
   }
 
   /* Make split panes horizontally swipeable one-by-one */

@@ -25,7 +25,7 @@ html.dark, body.dark {
 
 /* Prevent iOS zoom: ensure form controls are >=16px without inflating all text */
 @media (max-width: 640px) {
-  input, textarea, button, select {
+  input, textarea, button, select, .tiptap-editor, .ProseMirror {
     font-size: 16px;
     line-height: 24px;
   }
