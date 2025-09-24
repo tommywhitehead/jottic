@@ -16,13 +16,14 @@
   left: 0;
   right: 0;
   z-index: 10;
-  transition: opacity 0.2s ease-out;
+  transition: background-color 0.2s ease-out, opacity 0.2s ease-out, backdrop-filter 0.2s ease-out;
   padding: 8px 16px;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   background-color: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
 /* Logo */
@@ -564,4 +565,58 @@
 .logout-content {
   font-size: 14px;
   color: #464646;
+}
+
+/* Dark theme overrides */
+body.dark .app {
+  background-color: #0d0d0d;
+}
+
+body.dark .header {
+  background-color: rgba(13, 13, 13, 0.02);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+body.dark .header-nav {
+  color: #cccccc;
+}
+
+body.dark .document-title {
+  color: #888888;
+}
+
+body.dark .user-count {
+  color: #888888;
+}
+
+body.dark .editor-textarea,
+body.dark .tiptap-editor {
+  color: #e0e0e0;
+}
+
+body.dark .tiptap-loading,
+body.dark .loading-overlay {
+  background-color: rgba(0, 0, 0, 0.9);
+}
+
+body.dark .status-indicator.saving,
+body.dark .status-indicator.loading {
+  color: #aaaaaa;
+}
+
+body.dark .status-indicator.error {
+  color: #ff8c8c;
+}
+
+body.dark .collaboration-notice {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #aaaaaa;
+}
+
+/* Auth pages */
+body.dark .login-page,
+body.dark .logout-page {
+  background-color: #0d0d0d;
 }

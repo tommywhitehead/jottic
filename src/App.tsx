@@ -16,6 +16,7 @@ import { AuthenticatedRoomProvider } from './components/AuthenticatedRoomProvide
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { LogoutDebug } from './components/LogoutDebug';
 import { JotticLogo } from './components/JotticLogo';
+import { useTheme } from './contexts/ThemeContext';
 import { useOthers } from './lib/liveblocks';
 import { supabase } from './lib/supabase';
 import { generateRandomId } from './lib/randomId';
@@ -64,12 +65,20 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
 
 function Header() {
   const { user } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   
   return (
     <div className="header">
       <JotticLogo />
       <div className="header-nav">
-        <span className="header-link">dark</span>
+        <span 
+          className="header-link" 
+          style={{ cursor: 'pointer' }} 
+          onClick={toggleTheme}
+          title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+        >
+          {isDark ? 'light' : 'dark'}
+        </span>
         <LoginButton />
         {user && (
           <span className="header-link user-display">
