@@ -457,7 +457,9 @@ export function MultiPaneEditor({ noteTitles }: MultiPaneEditorProps) {
               setActivePaneIndex(prev);
             }}
           >
-            ←
+            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
           </button>
         )}
         {noteTitles.length > 1 && activePaneIndex !== null && activePaneIndex < noteTitles.length - 1 && (
@@ -470,7 +472,9 @@ export function MultiPaneEditor({ noteTitles }: MultiPaneEditorProps) {
               setActivePaneIndex(next);
             }}
           >
-            ➜
+            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
           </button>
         )}
       </div>

@@ -302,6 +302,14 @@
   overflow-wrap: break-word;
 }
 
+/* Single-spaced paragraphs inside the editor */
+.tiptap-editor p {
+  margin: 0;
+  margin-block-start: 0;
+  margin-block-end: 0;
+  line-height: 1.2;
+}
+
 .tiptap-editor:focus {
   outline: none;
 }
@@ -648,8 +656,8 @@ body.dark .logout-page {
   background-color: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
-  color: #ffffff;
-  border: none;
+  color: #464646;
+  border: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: 9999px;
   width: 40px;
   height: 40px;
@@ -659,6 +667,7 @@ body.dark .logout-page {
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(0,0,0,0.2);
   transition: transform 0.15s ease, opacity 0.15s ease;
+  font-size: 18px;
 }
 
 .next-pane-btn:hover {
@@ -670,6 +679,7 @@ body.dark .next-pane-btn {
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   color: #e0e0e0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 /* Floating prev-pane button */
@@ -681,8 +691,8 @@ body.dark .next-pane-btn {
   background-color: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
-  color: #ffffff;
-  border: none;
+  color: #464646;
+  border: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: 9999px;
   width: 40px;
   height: 40px;
@@ -692,6 +702,7 @@ body.dark .next-pane-btn {
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(0,0,0,0.2);
   transition: transform 0.15s ease, opacity 0.15s ease;
+  font-size: 18px;
 }
 
 .prev-pane-btn:hover {
@@ -703,6 +714,7 @@ body.dark .prev-pane-btn {
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   color: #e0e0e0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 @media (max-width: 640px) {
@@ -753,8 +765,7 @@ body.dark .prev-pane-btn {
   }
 
   .tiptap-editor {
-    font-size: 16px; /* prevent iOS focus zoom */
-    line-height: 24px;
+    font-size: 12px; /* prevent iOS focus zoom */
   }
 
   /* Make split panes horizontally swipeable one-by-one */

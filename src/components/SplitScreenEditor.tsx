@@ -279,9 +279,11 @@ export function SplitScreenEditor({ leftNoteTitle, rightNoteTitle }: SplitScreen
                 const targetLeft = prev * width;
                 container.scrollTo({ left: targetLeft, behavior: 'smooth' });
               }}
-            >
-              ←
-            </button>
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
           )}
           {currentIndex < 1 && (
             <button
@@ -296,9 +298,11 @@ export function SplitScreenEditor({ leftNoteTitle, rightNoteTitle }: SplitScreen
                 const targetLeft = next * width;
                 container.scrollTo({ left: targetLeft, behavior: 'smooth' });
               }}
-            >
-              ➜
-            </button>
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
           )}
         </div>
     </div>
