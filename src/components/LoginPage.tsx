@@ -32,7 +32,7 @@ export function LoginPage() {
         <div className="login-container">
           <JotticLogo />
           <div className="login-content">
-            <div>Loading...</div>
+            <div className="loading-ui">Loading...</div>
           </div>
         </div>
       </div>
@@ -44,8 +44,7 @@ export function LoginPage() {
       <div className="login-container">
         <JotticLogo />
         <div className="login-content">
-          <h1>Welcome to Jottic</h1>
-          <p>Sign in to access your collaborative notes</p>
+          <p>Co-op notes that work like your brain</p>
           <button 
             className="login-button"
             onClick={handleLogin}

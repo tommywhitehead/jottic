@@ -20,7 +20,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
         height: '100vh',
         fontFamily: 'monospace'
       }}>
-        <div>Loading...</div>
+        <div className="loading-ui">Loading...</div>
       </div>
     );
   }

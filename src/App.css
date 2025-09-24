@@ -219,6 +219,13 @@
   border-radius: 4px;
 }
 
+/* Standardized loading UI text size */
+.loading-ui {
+  font-family: 'Martian Mono', sans-serif;
+  font-size: 12px;
+  color: #464646;
+}
+
 
 .selections-overlay {
   position: absolute;
@@ -511,23 +518,27 @@
   font-family: 'Martian Mono', sans-serif;
 }
 
+.login-container .logo {
+  margin-bottom: 16px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.login-container p {
+  font-size: 12px;
+  margin-bottom: 32px;
+}
+
+.login-container .logo .logo-svg {
+  width: auto;
+}
+
 .login-container, .logout-container {
   text-align: center;
   max-width: 400px;
   padding: 40px 20px;
-}
-
-.login-content h1 {
-  font-size: 24px;
-  font-weight: normal;
-  color: #464646;
-  margin: 20px 0 10px 0;
-}
-
-.login-content p {
-  font-size: 14px;
-  color: #666;
-  margin: 0 0 30px 0;
 }
 
 .login-button {

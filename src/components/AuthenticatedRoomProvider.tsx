@@ -27,7 +27,7 @@ export function AuthenticatedRoomProvider({
         height: '100vh',
         fontFamily: 'monospace'
       }}>
-        <div>Loading...</div>
+        <div className="loading-ui">Loading...</div>
       </div>
     );
   }

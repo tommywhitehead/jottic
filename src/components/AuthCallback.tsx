@@ -33,7 +33,7 @@ export function AuthCallback() {
       height: '100vh',
       fontFamily: 'monospace'
     }}>
-      <div>{loading ? 'Completing authentication...' : 'Redirecting...'}</div>
+      <div className="loading-ui">{loading ? 'Completing authentication...' : 'Redirecting...'}</div>
     </div>
   );
 }
