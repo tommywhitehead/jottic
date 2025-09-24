@@ -582,6 +582,11 @@ body.dark .header-nav {
   color: #cccccc;
 }
 
+/* Logo color in dark mode */
+body.dark .logo-svg {
+  --fill-0: #ffffff;
+}
+
 body.dark .document-title {
   color: #888888;
 }
