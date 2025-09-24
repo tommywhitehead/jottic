@@ -6,9 +6,15 @@
 @tailwind utilities;
 
 /* Apply Martian Mono to the entire app */
-body {
+html, body {
   font-family: 'Martian Mono', monospace;
   margin: 0;
+  background-color: white;
+}
+
+/* Theme-aware root background to fix overscroll color */
+html.dark, body.dark {
+  background-color: #0d0d0d;
 }
 
 /* Ensure all text elements use Martian Mono */

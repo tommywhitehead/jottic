@@ -27,12 +27,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
   }, [isDark]);
 
-  // Apply theme class to document body
+  // Apply theme class to document body and html (root) for overscroll/background
   useEffect(() => {
+    const root = document.documentElement;
     if (isDark) {
       document.body.classList.add('dark');
+      root.classList.add('dark');
     } else {
       document.body.classList.remove('dark');
+      root.classList.remove('dark');
     }
   }, [isDark]);
 
