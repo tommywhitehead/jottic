@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useOthers } from '../lib/liveblocks';
 import { AuthenticatedRoomProvider } from './AuthenticatedRoomProvider';
@@ -6,6 +6,7 @@ import { TiptapEditor } from './TiptapEditor';
 import { useNotes } from '../hooks/useNotes';
 import { useAuth } from '../contexts/AuthContext';
 import { LoginButton } from './LoginButton';
+import { useTheme } from '../contexts/ThemeContext';
 import { JotticLogo } from './JotticLogo';
 
 interface MultiPaneEditorProps {
@@ -64,13 +65,21 @@ function PaneWithUserCount({
 
 function Header({ noteCount }: { noteCount: number }) {
   const { user } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   
   return (
     <div className="header">
       <JotticLogo />
       <div className="header-nav">
         <span className="header-link">{noteCount} notes</span>
-        <span className="header-link">dark</span>
+        <span 
+          className="header-link"
+          style={{ cursor: 'pointer' }}
+          onClick={toggleTheme}
+          title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+        >
+          {isDark ? 'light' : 'dark'}
+        </span>
         <LoginButton />
         {user && (
           <span className="header-link user-display">
@@ -104,6 +113,9 @@ export function MultiPaneEditor({ noteTitles }: MultiPaneEditorProps) {
   
   // Ref for the scrollable container
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const isProgrammaticScrollRef = useRef<boolean>(false);
+  const scrollEndTimerRef = useRef<number | null>(null);
+  const hasInitialScrollRef = useRef<boolean>(false);
   
   // Get notes for all panes - we'll load them individually in each pane component
   // This avoids the Rules of Hooks violation
@@ -118,18 +130,148 @@ export function MultiPaneEditor({ noteTitles }: MultiPaneEditorProps) {
     return activePaneIndex === index;
   };
 
-  // Update active pane to rightmost when noteTitles change
+  // When a new pane is added (URL grows), activate and reveal the new rightmost pane
+  const prevLengthRef = useRef<number>(noteTitles.length);
   useEffect(() => {
-    if (noteTitles.length > 0) {
-      const lastIndex = noteTitles.length - 1;
-      setActivePaneIndex(lastIndex);
+    const prev = prevLengthRef.current;
+    const curr = noteTitles.length;
+    if (curr > prev && curr > 0) {
+      // Always mark the new pane as active
+      setActivePaneIndex(curr - 1);
+
+      // Smoothly reveal and focus last pane on desktop; mobile handled by activePaneIndex effect
+      const isMobile = window.matchMedia('(max-width: 640px)').matches;
+      if (!isMobile && scrollContainerRef.current) {
+        const container = scrollContainerRef.current;
+        // Mark as programmatic to avoid scroll handler changing index mid-flight
+        isProgrammaticScrollRef.current = true;
+
+        const scrollToRightmost = () => {
+          const targetLeft = container.scrollWidth - container.clientWidth;
+          container.scrollTo({ left: targetLeft, behavior: 'smooth' });
+        };
+
+        // Perform several attempts to ensure layout is ready
+        const attemptDelays = [0, 50, 100, 200, 350];
+        attemptDelays.forEach((delay) => {
+          setTimeout(() => {
+            requestAnimationFrame(scrollToRightmost);
+          }, delay);
+        });
+
+        // Reset the programmatic flag after animation likely completes
+        const resetTimer = window.setTimeout(() => {
+          isProgrammaticScrollRef.current = false;
+        }, 600);
+
+        // Robust focus with a few retries to wait for mount/layout
+        const tryFocus = (attempt = 0) => {
+          const pane = document.querySelector(`[data-pane-index="${curr - 1}"]`);
+          const editor = pane?.querySelector('.ProseMirror') as HTMLElement | null;
+          if (editor) {
+            editor.focus();
+            return;
+          }
+          if (attempt < 6) {
+            const delays = [80, 120, 180, 250, 350, 500];
+            setTimeout(() => tryFocus(attempt + 1), delays[attempt] || 200);
+          }
+        };
+        tryFocus(0);
+
+        return () => {
+          window.clearTimeout(resetTimer);
+        };
+      }
     }
+    prevLengthRef.current = curr;
   }, [noteTitles]);
+
+  // On initial load with multiple panes, ensure the last pane is visible and focused
+  useEffect(() => {
+    if (hasInitialScrollRef.current) return;
+    if (!noteTitles || noteTitles.length === 0) return;
+    hasInitialScrollRef.current = true;
+
+    const lastIndex = noteTitles.length - 1;
+    setActivePaneIndex(lastIndex);
+
+    const isMobile = window.matchMedia('(max-width: 640px)').matches;
+    const container = scrollContainerRef.current;
+
+    if (!isMobile && container) {
+      isProgrammaticScrollRef.current = true;
+
+      const scrollToRightmost = () => {
+        const targetLeft = container.scrollWidth - container.clientWidth;
+        container.scrollTo({ left: targetLeft, behavior: 'smooth' });
+      };
+
+      const attemptDelays = [0, 50, 100, 200, 350];
+      attemptDelays.forEach((delay) => {
+        setTimeout(() => {
+          requestAnimationFrame(scrollToRightmost);
+        }, delay);
+      });
+
+      const resetTimer = window.setTimeout(() => {
+        isProgrammaticScrollRef.current = false;
+      }, 600);
+
+      const tryFocus = (attempt = 0) => {
+        const pane = document.querySelector(`[data-pane-index="${lastIndex}"]`);
+        const editor = pane?.querySelector('.ProseMirror') as HTMLElement | null;
+        if (editor) {
+          editor.focus();
+          return;
+        }
+        if (attempt < 6) {
+          const delays = [80, 120, 180, 250, 350, 500];
+          setTimeout(() => tryFocus(attempt + 1), delays[attempt] || 200);
+        }
+      };
+      tryFocus(0);
+
+      return () => window.clearTimeout(resetTimer);
+    } else {
+      // On mobile, activePaneIndex effect will handle scrolling; still ensure focus
+      setTimeout(() => {
+        const pane = document.querySelector(`[data-pane-index="${lastIndex}"]`);
+        const editor = pane?.querySelector('.ProseMirror') as HTMLElement | null;
+        editor?.focus();
+      }, 250);
+    }
+  }, [noteTitles.length]);
 
   // Handle pane click to set active pane
   const handlePaneClick = (index: number) => {
     setActivePaneIndex(index);
   };
+
+  // Sync active pane with scroll position (for swipe on mobile) using scroll-end debounce
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const onScroll = () => {
+      if (isProgrammaticScrollRef.current) return;
+      if (scrollEndTimerRef.current) {
+        window.clearTimeout(scrollEndTimerRef.current);
+      }
+      scrollEndTimerRef.current = window.setTimeout(() => {
+        const width = container.clientWidth;
+        if (width > 0) {
+          const index = Math.round(container.scrollLeft / width);
+          if (index !== activePaneIndex && index >= 0 && index < noteTitles.length) {
+            setActivePaneIndex(index);
+          }
+        }
+      }, 120);
+    };
+
+    container.addEventListener('scroll', onScroll, { passive: true });
+    return () => container.removeEventListener('scroll', onScroll as EventListener);
+  }, [noteTitles.length, activePaneIndex]);
 
   // Handle closing notes
   const handleCloseNote = () => {
@@ -202,65 +344,47 @@ export function MultiPaneEditor({ noteTitles }: MultiPaneEditorProps) {
     return () => clearTimeout(pageLoadTimer);
   }, []);
 
-  // Robust scroll to rightmost pane function
-  const scrollToRightmost = () => {
-    if (scrollContainerRef.current) {
-      const container = scrollContainerRef.current;
-      // Force a reflow to ensure layout is complete
-      container.offsetHeight;
-      // Scroll to the very end
-      container.scrollLeft = container.scrollWidth - container.clientWidth;
-    }
-  };
-
-  // Enhanced scroll function using requestAnimationFrame
-  const scrollToRightmostWithRAF = () => {
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        scrollToRightmost();
-      });
-    });
-  };
-
-  // Auto-scroll to the rightmost pane and focus it on load
+  // When active pane changes, scroll to it on mobile only and focus editor
   useEffect(() => {
-    const focusLastPane = () => {
-      if (noteTitles.length > 0) {
-        const lastIndex = noteTitles.length - 1;
-        setActivePaneIndex(lastIndex);
-        
-        // Try to focus the editor within the last pane with multiple attempts
-        const attemptFocus = (attempts = 0) => {
-          const lastPane = document.querySelector(`[data-pane-index="${lastIndex}"]`);
-          if (lastPane) {
-            const editor = lastPane.querySelector('.ProseMirror');
-            if (editor) {
-              (editor as HTMLElement).focus();
-              return true;
-            }
-          }
-          
-          // Retry up to 5 times with increasing delays
-          if (attempts < 5) {
-            setTimeout(() => attemptFocus(attempts + 1), 100 * (attempts + 1));
-          }
-          return false;
-        };
-        
-        attemptFocus();
-      }
-    };
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    if (activePaneIndex === null) return;
 
-    // Multiple scroll attempts with increasing delays to ensure it works
-    const scrollAttempts = [0, 50, 100, 200, 500];
-    
-    scrollAttempts.forEach((delay) => {
-      setTimeout(() => {
-        scrollToRightmostWithRAF();
-        focusLastPane();
-      }, delay);
-    });
-  }, [noteTitles]);
+    const isMobile = window.matchMedia('(max-width: 640px)').matches;
+    if (!isMobile) {
+      // On desktop, do not auto-snap/scroll when active changes
+      // Optionally still focus the editor in the target pane
+      const pane = document.querySelector(`[data-pane-index="${activePaneIndex}"]`);
+      const editor = pane?.querySelector('.ProseMirror');
+      if (editor) {
+        (editor as HTMLElement).focus();
+      }
+      return;
+    }
+
+    const width = container.clientWidth;
+    const targetLeft = activePaneIndex * width;
+    isProgrammaticScrollRef.current = true;
+    container.scrollTo({ left: targetLeft, behavior: 'smooth' });
+
+    const resetProgrammatic = window.setTimeout(() => {
+      isProgrammaticScrollRef.current = false;
+    }, 300);
+
+    // Focus editor in the active pane shortly after scrolling starts
+    const focusTimer = window.setTimeout(() => {
+      const pane = document.querySelector(`[data-pane-index="${activePaneIndex}"]`);
+      const editor = pane?.querySelector('.ProseMirror');
+      if (editor) {
+        (editor as HTMLElement).focus();
+      }
+    }, 180);
+
+    return () => {
+      window.clearTimeout(resetProgrammatic);
+      window.clearTimeout(focusTimer);
+    };
+  }, [activePaneIndex]);
 
   // Handle mouse movement to fade UI back in
   useEffect(() => {
@@ -321,6 +445,34 @@ export function MultiPaneEditor({ noteTitles }: MultiPaneEditorProps) {
             </div>
           ))}
         </div>
+      </div>
+      <div className={`header-fade ${isTyping && isPageLoaded ? 'faded' : ''}`}>
+        {noteTitles.length > 1 && activePaneIndex !== null && activePaneIndex > 0 && (
+          <button
+            type="button"
+            className="prev-pane-btn"
+            aria-label="Previous pane"
+            onClick={() => {
+              const prev = Math.max((activePaneIndex ?? 0) - 1, 0);
+              setActivePaneIndex(prev);
+            }}
+          >
+            ←
+          </button>
+        )}
+        {noteTitles.length > 1 && activePaneIndex !== null && activePaneIndex < noteTitles.length - 1 && (
+          <button
+            type="button"
+            className="next-pane-btn"
+            aria-label="Next pane"
+            onClick={() => {
+              const next = Math.min((activePaneIndex ?? 0) + 1, noteTitles.length - 1);
+              setActivePaneIndex(next);
+            }}
+          >
+            ➜
+          </button>
+        )}
       </div>
       
     </div>

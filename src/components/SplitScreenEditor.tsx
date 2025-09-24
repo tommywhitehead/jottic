@@ -6,6 +6,7 @@ import { TiptapEditor } from './TiptapEditor';
 import { useNotes } from '../hooks/useNotes';
 import { useActivePane } from '../hooks/useActivePane';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { LoginButton } from './LoginButton';
 import { JotticLogo } from './JotticLogo';
 
@@ -71,12 +72,20 @@ function PaneWithUserCount({
 
 function Header() {
   const { user } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   
   return (
     <div className="header">
       <JotticLogo />
       <div className="header-nav">
-        <span className="header-link">dark</span>
+        <span 
+          className="header-link"
+          style={{ cursor: 'pointer' }}
+          onClick={toggleTheme}
+          title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+        >
+          {isDark ? 'light' : 'dark'}
+        </span>
         <LoginButton />
         {user && (
           <span className="header-link user-display">
@@ -91,18 +100,20 @@ function Header() {
 export function SplitScreenEditor({ leftNoteTitle, rightNoteTitle }: SplitScreenEditorProps) {
   const [isTyping, setIsTyping] = useState(false);
   const [isPageLoaded, setIsPageLoaded] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const navigate = useNavigate();
   
   // Refs for the panes
   const leftPaneRef = useRef<HTMLDivElement>(null);
   const rightPaneRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   
   // Get notes for both panes
   const leftNote = useNotes(leftNoteTitle);
   const rightNote = useNotes(rightNoteTitle);
   
   // Track which pane is active
-  const { activePane, isLeftActive, isRightActive } = useActivePane({
+  const { isLeftActive, isRightActive } = useActivePane({
     leftPaneRef: leftPaneRef as React.RefObject<HTMLElement>,
     rightPaneRef: rightPaneRef as React.RefObject<HTMLElement>
   });
@@ -117,6 +128,32 @@ export function SplitScreenEditor({ leftNoteTitle, rightNoteTitle }: SplitScreen
       navigate(`/${leftNoteTitle}`);
     }
   };
+
+  // Sync active pane with scroll position on mobile swipe
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const panes = [leftPaneRef.current, rightPaneRef.current].filter(Boolean) as HTMLDivElement[];
+    if (panes.length !== 2) return;
+
+    const updateIndex = () => {
+      const width = container.clientWidth;
+      if (width <= 0) return;
+      const index = Math.round(container.scrollLeft / width);
+      setCurrentIndex(index);
+    };
+
+    const onScroll = () => {
+      requestAnimationFrame(updateIndex);
+    };
+
+    container.addEventListener('scroll', onScroll, { passive: true });
+    // Initialize index on mount
+    requestAnimationFrame(() => onScroll());
+
+    return () => container.removeEventListener('scroll', onScroll as EventListener);
+  }, [isLeftActive, isRightActive]);
 
   // Simple ESC close functionality
   useEffect(() => {
@@ -166,7 +203,7 @@ export function SplitScreenEditor({ leftNoteTitle, rightNoteTitle }: SplitScreen
       </div>
       
         <div className="main-layout">
-          <div className="split-screen-layout">
+          <div className="split-screen-layout" ref={containerRef}>
           {/* Left pane */}
           <div className={`split-pane ${isLeftActive ? 'active' : 'inactive'}`} ref={leftPaneRef}>
             <AuthenticatedRoomProvider 
@@ -227,6 +264,42 @@ export function SplitScreenEditor({ leftNoteTitle, rightNoteTitle }: SplitScreen
             </AuthenticatedRoomProvider>
           </div>
           </div>
+        </div>
+        <div className={`header-fade ${isTyping && isPageLoaded ? 'faded' : ''}`}>
+          {currentIndex > 0 && (
+            <button
+              type="button"
+              className="prev-pane-btn"
+              aria-label="Previous pane"
+              onClick={() => {
+                const container = containerRef.current;
+                if (!container) return;
+                const width = container.clientWidth;
+                const prev = Math.max(currentIndex - 1, 0);
+                const targetLeft = prev * width;
+                container.scrollTo({ left: targetLeft, behavior: 'smooth' });
+              }}
+            >
+              ←
+            </button>
+          )}
+          {currentIndex < 1 && (
+            <button
+              type="button"
+              className="next-pane-btn"
+              aria-label="Next pane"
+              onClick={() => {
+                const container = containerRef.current;
+                if (!container) return;
+                const width = container.clientWidth;
+                const next = Math.min(currentIndex + 1, 1);
+                const targetLeft = next * width;
+                container.scrollTo({ left: targetLeft, behavior: 'smooth' });
+              }}
+            >
+              ➜
+            </button>
+          )}
         </div>
     </div>
   );

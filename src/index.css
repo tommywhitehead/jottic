@@ -10,6 +10,7 @@ html, body {
   font-family: 'Martian Mono', monospace;
   margin: 0;
   background-color: white;
+  -webkit-text-size-adjust: 100%;
 }
 
 /* Theme-aware root background to fix overscroll color */
@@ -20,4 +21,12 @@ html.dark, body.dark {
 /* Ensure all text elements use Martian Mono */
 * {
   font-family: 'Martian Mono', monospace;
+}
+
+/* Prevent iOS zoom: ensure form controls are >=16px without inflating all text */
+@media (max-width: 640px) {
+  input, textarea, button, select {
+    font-size: 16px;
+    line-height: 24px;
+  }
 }
