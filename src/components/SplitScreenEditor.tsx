@@ -179,6 +179,31 @@ export function SplitScreenEditor({ leftNoteTitle, rightNoteTitle }: SplitScreen
     return () => clearTimeout(pageLoadTimer);
   }, []);
 
+  // On mount or when pane titles change, ensure correct auto-scroll/focus per platform
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const isMobile = window.matchMedia('(max-width: 640px)').matches;
+    if (isMobile) {
+      // On mobile 1->2: scroll to new (right) pane and focus it
+      requestAnimationFrame(() => {
+        const width = container.clientWidth;
+        container.scrollTo({ left: width, behavior: 'smooth' });
+        setTimeout(() => {
+          const editor = rightPaneRef.current?.querySelector('.ProseMirror') as HTMLElement | null;
+          editor?.focus();
+        }, 180);
+      });
+    } else {
+      // On desktop 1->2: both panes visible equally (no scroll). Optionally focus right pane
+      setTimeout(() => {
+        const editor = rightPaneRef.current?.querySelector('.ProseMirror') as HTMLElement | null;
+        editor?.focus();
+      }, 150);
+    }
+  }, [leftNoteTitle, rightNoteTitle]);
+
   // Handle mouse movement to fade UI back in
   useEffect(() => {
     const handleMouseMove = () => {

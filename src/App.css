@@ -793,6 +793,6 @@ body.dark .prev-pane-btn {
   .login-container p,
   .login-button,
   .loading-ui {
-    font-size: 16px;
+    font-size: 12px;
   }
 }

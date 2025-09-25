@@ -248,10 +248,16 @@ export function MultiPaneEditor({ noteTitles }: MultiPaneEditorProps) {
     setActivePaneIndex(index);
   };
 
-  // Sync active pane with scroll position (for swipe on mobile) using scroll-end debounce
+  // Sync active pane with scroll position (for swipe on mobile only) using scroll-end debounce
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
+
+    const isMobile = window.matchMedia('(max-width: 640px)').matches;
+    if (!isMobile) {
+      // On desktop, never derive active pane from scroll to avoid force scroll loops
+      return;
+    }
 
     const onScroll = () => {
       if (isProgrammaticScrollRef.current) return;
